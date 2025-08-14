@@ -5,6 +5,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from app.routes.route_user import router as users_router
 from app.routes.route_classroom import router as classrooms_router
 from app.routes.route_homework import router as homeworks_router
+from app.routes.route_auth import router as auth_router
 
 
 def create_app() -> FastAPI:
@@ -21,6 +22,7 @@ def create_app() -> FastAPI:
     app.include_router(users_router)
     app.include_router(classrooms_router)
     app.include_router(homeworks_router)
+    app.include_router(auth_router)
 
 
     return app

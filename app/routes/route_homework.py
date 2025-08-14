@@ -6,12 +6,13 @@ from app.schemas.schema_homework import HomeworkCreate, HomeworkRead, HomeworkUp
 from app.schemas.schema_error import ErrorItemCreate, ErrorItemRead
 from app.repositories.repo_homework import HomeworkRepository
 from app.repositories.repo_error import ErrorRepository
+from app.utils.auth import get_current_user
 
 router = APIRouter(prefix="/homeworks", tags=["Homeworks"])
 
 
 @router.post("", response_model=HomeworkRead, status_code=status.HTTP_201_CREATED)
-async def create_homework(payload: HomeworkCreate, db: AsyncSession = Depends(get_async_session)):
+async def create_homework(payload: HomeworkCreate, db: AsyncSession = Depends(get_async_session), current_user=Depends(get_current_user)):
     repo = HomeworkRepository(db)
     hw = await repo.create(
         student_id=payload.student_id,
@@ -25,7 +26,7 @@ async def create_homework(payload: HomeworkCreate, db: AsyncSession = Depends(ge
 
 
 @router.get("/{homework_id}", response_model=HomeworkRead)
-async def get_homework(homework_id: int, db: AsyncSession = Depends(get_async_session)):
+async def get_homework(homework_id: int, db: AsyncSession = Depends(get_async_session), current_user=Depends(get_current_user)):
     repo = HomeworkRepository(db)
     hw = await repo.get(homework_id)
     if not hw:
@@ -34,14 +35,14 @@ async def get_homework(homework_id: int, db: AsyncSession = Depends(get_async_se
 
 
 @router.get("", response_model=list[HomeworkRead])
-async def list_homeworks(student_id: int | None = None, classroom_id: int | None = None, limit: int = 100, offset: int = 0, db: AsyncSession = Depends(get_async_session)):
+async def list_homeworks(student_id: int | None = None, classroom_id: int | None = None, limit: int = 100, offset: int = 0, db: AsyncSession = Depends(get_async_session), current_user=Depends(get_current_user)):
     repo = HomeworkRepository(db)
     items = await repo.list(student_id=student_id, classroom_id=classroom_id, limit=limit, offset=offset)
     return list(items)
 
 
 @router.patch("/{homework_id}", response_model=HomeworkRead)
-async def update_homework(homework_id: int, payload: HomeworkUpdate, db: AsyncSession = Depends(get_async_session)):
+async def update_homework(homework_id: int, payload: HomeworkUpdate, db: AsyncSession = Depends(get_async_session), current_user=Depends(get_current_user)):
     repo = HomeworkRepository(db)
     hw = await repo.update(homework_id, **payload.dict(exclude_unset=True))
     if not hw:
@@ -51,7 +52,7 @@ async def update_homework(homework_id: int, payload: HomeworkUpdate, db: AsyncSe
 
 
 @router.delete("/{homework_id}", status_code=204)
-async def delete_homework(homework_id: int, db: AsyncSession = Depends(get_async_session)):
+async def delete_homework(homework_id: int, db: AsyncSession = Depends(get_async_session), current_user=Depends(get_current_user)):
     repo = HomeworkRepository(db)
     await repo.delete(homework_id)
     await db.commit()
@@ -61,14 +62,14 @@ async def delete_homework(homework_id: int, db: AsyncSession = Depends(get_async
 # ---- Ошибки по домашке ----
 
 @router.get("/{homework_id}/errors", response_model=list[ErrorItemRead])
-async def list_errors(homework_id: int, db: AsyncSession = Depends(get_async_session)):
+async def list_errors(homework_id: int, db: AsyncSession = Depends(get_async_session), current_user=Depends(get_current_user)):
     repo = ErrorRepository(db)
     items = await repo.list_for_homework(homework_id)
     return list(items)
 
 
 @router.post("/{homework_id}/errors", status_code=204)
-async def add_errors(homework_id: int, payload: list[ErrorItemCreate], db: AsyncSession = Depends(get_async_session)):
+async def add_errors(homework_id: int, payload: list[ErrorItemCreate], db: AsyncSession = Depends(get_async_session), current_user=Depends(get_current_user)):
     hw_repo = HomeworkRepository(db)
     if not await hw_repo.get(homework_id):
         raise HTTPException(status_code=404, detail="Homework not found")

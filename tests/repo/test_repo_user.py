@@ -2,6 +2,7 @@
 import pytest
 from app.models.model_user import Role
 from app.repositories.repo_user import UserRepository
+from app.schemas.schema_user import UserCreate
 
 @pytest.mark.asyncio
 async def test_create_and_get_user(session):
@@ -9,10 +10,12 @@ async def test_create_and_get_user(session):
 
 		# Создаём пользователя
 		user = await repo.create(
-			email="test@example.com",
-			password="123456",
-			full_name="Test User",
-			role=Role.student
+			UserCreate(
+				email="test@example.com",
+				password="123456",
+				full_name="Test User",
+				role=Role.student
+			)
 		)
 
 		await session.commit()
