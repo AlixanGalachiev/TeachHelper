@@ -1,0 +1,48 @@
+from functools import lru_cache
+from typing import Optional
+from pydantic_settings import BaseSettings, SettingsConfigDict
+from pydantic import computed_field
+
+class Settings(BaseSettings):
+    # DB parts (used if full URLs are not provided)
+    DATABASE_HOST: str = "localhost"
+    DATABASE_PORT: int = 5432
+    DATABASE_USER: str = "postgres"
+    DATABASE_PASSWORD: str = "postgres"
+    DATABASE_NAME: str = "school"
+
+    # Security / JWT
+    SECRET_KEY: str = "change_me"
+    ALGORITHM: str = "HS256"
+    ACCESS_TOKEN_EXPIRE_MINUTES: int = 120
+
+    model_config = SettingsConfigDict(env_file=".env", env_file_encoding="utf-8", extra="ignore")
+
+    @computed_field
+    @property
+    def sync_url(self) -> str:
+        return (
+            f"postgresql+psycopg2://{self.DATABASE_USER}:{self.DATABASE_PASSWORD}"
+            f"@{self.DATABASE_HOST}:{self.DATABASE_PORT}/{self.DATABASE_NAME}"
+        )
+
+    @computed_field
+    @property
+    def async_url(self) -> str:
+        return (
+            f"postgresql+asyncpg://{self.DATABASE_USER}:{self.DATABASE_PASSWORD}"
+            f"@{self.DATABASE_HOST}:{self.DATABASE_PORT}/{self.DATABASE_NAME}"
+        )
+
+settings = Settings()
+
+
+# --- Connection helpers ---
+from sqlalchemy import create_engine
+from sqlalchemy.ext.asyncio import create_async_engine
+
+def get_sync_engine():
+    return create_engine(settings.sync_url, future=True)
+
+def get_async_engine():
+    return create_async_engine(settings.async_url, future=True)
