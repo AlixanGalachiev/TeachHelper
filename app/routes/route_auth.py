@@ -4,7 +4,8 @@ from fastapi.security import OAuth2PasswordRequestForm
 from app.db import get_async_session
 from app.repositories.repo_user import UserRepository
 from app.schemas.schema_user import UserCreate, UserRead
-from app.utils.auth import create_access_token, verify_password
+from app.utils.oAuth import create_access_token
+from app.utils.password import verify_password
 
 router = APIRouter(prefix="/auth", tags=["Auth"])
 

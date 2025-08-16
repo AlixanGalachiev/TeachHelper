@@ -5,9 +5,14 @@ from app.db import get_async_session
 from app.schemas.schema_user import UserCreate, UserRead, UserUpdate
 from app.repositories.repo_user import UserRepository
 from app.models.model_user import Role
-from app.utils.auth import get_current_user
+from app.utils.oAuth import get_current_user
+
 
 router = APIRouter(prefix="/users", tags=["Users"])
+
+@router.get("/me", response_model=UserRead)
+async def get_user(current_user=Depends(get_current_user)):
+	return current_user
 
 @router.get("/{user_id}", response_model=UserRead)
 async def get_user(user_id: int, db: AsyncSession = Depends(get_async_session), current_user=Depends(get_current_user)):

@@ -5,7 +5,7 @@ from passlib.hash import bcrypt
 
 from app.models.model_user import User, Role
 from app.schemas.schema_user import UserCreate
-from app.utils.auth import get_password_hash
+from app.utils.password import get_password_hash
 
 
 class UserRepository:

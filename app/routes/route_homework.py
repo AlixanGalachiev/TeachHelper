@@ -6,7 +6,7 @@ from app.schemas.schema_homework import HomeworkCreate, HomeworkRead, HomeworkUp
 from app.schemas.schema_error import ErrorItemCreate, ErrorItemRead
 from app.repositories.repo_homework import HomeworkRepository
 from app.repositories.repo_error import ErrorRepository
-from app.utils.auth import get_current_user
+from app.utils.oAuth import get_current_user
 
 router = APIRouter(prefix="/homeworks", tags=["Homeworks"])
 
