@@ -1,0 +1,17 @@
+tests/
+*.venv
+# *.env
+pytest.ini
+__pycache__
+.pytest_cache
+
+
+*.pyc
+*.pyo
+*.pyd
+env/
+venv/
+*.log
+*.sqlite3
+.idea/
+.vscode/

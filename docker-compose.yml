@@ -1,0 +1,34 @@
+version: "3.9"
+
+services:
+  app:
+    build: .
+    env_file:
+      - .env
+    container_name: teachHelperBack
+    restart: always
+    ports:
+      - "8000:8000"
+    depends_on:
+      - db
+    volumes:
+      - .:/app
+
+  db:
+    image: postgres:15
+    container_name: postgres_db
+    restart: always
+    env_file:
+      - .env
+    environment:
+      POSTGRES_USER: ${DATABASE_USER}
+      POSTGRES_PASSWORD: ${DATABASE_PASSWORD}
+      POSTGRES_DB: ${DATABASE_NAME}
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+
+volumes:
+  pgdata:
+

@@ -5,11 +5,11 @@ from pydantic import computed_field
 
 class Settings(BaseSettings):
     # DB parts (used if full URLs are not provided)
-    DATABASE_HOST: str = "localhost"
-    DATABASE_PORT: int = 5432
-    DATABASE_USER: str = "postgres"
-    DATABASE_PASSWORD: str = "postgres"
-    DATABASE_NAME: str = "school"
+    DATABASE_HOST: str
+    DATABASE_PORT: int
+    DATABASE_USER: str
+    DATABASE_PASSWORD: str
+    DATABASE_NAME: str
 
     # Security / JWT
     SECRET_KEY: str = "change_me"
