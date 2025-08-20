@@ -20,7 +20,6 @@ RUN pip install --no-cache-dir -r requirements.txt
 
 # Копируем весь проект в контейнер
 COPY . .
-RUN chmod +x /app/entrypoint.sh
 
 # Открываем порт (например, для FastAPI/Flask)
 EXPOSE 8000

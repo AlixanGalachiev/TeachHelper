@@ -1,3 +1,5 @@
+import uuid
+from sqlalchemy.dialects.postgresql import UUID
 from typing import Optional, List
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from sqlalchemy import String, ForeignKey, Text, Integer
@@ -12,8 +14,8 @@ class HomeworkStatus(str):
 
 
 class Homework(Base):
-    student_id: Mapped[int] = mapped_column(ForeignKey("user.id", ondelete="CASCADE"), index=True)
-    classroom_id: Mapped[int] = mapped_column(ForeignKey("classroom.id", ondelete="SET NULL"), nullable=True, index=True)
+    student_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), ForeignKey("user.id", ondelete="CASCADE"), index=True)
+    classroom_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), ForeignKey("classroom.id", ondelete="SET NULL"), nullable=True, index=True)
 
     # исходники
     file_path: Mapped[Optional[str]] = mapped_column(String(500), nullable=True)
@@ -29,7 +31,7 @@ class Homework(Base):
 class ErrorItem(Base):
     __tablename__ = "erroritem"
 
-    homework_id: Mapped[int] = mapped_column(ForeignKey("homework.id", ondelete="CASCADE"), index=True)
+    homework_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), ForeignKey("homework.id", ondelete="CASCADE"), index=True)
     kind: Mapped[str] = mapped_column(String(64))  # spelling, punctuation, grammar, ...
     message: Mapped[str] = mapped_column(String(500))
     start_pos: Mapped[int] = mapped_column(Integer)
