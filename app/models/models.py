@@ -8,6 +8,7 @@ from sqlalchemy import Column, Table
 import enum
 from datetime import datetime
 from typing import Optional
+from datetime import datetime
 
 from .base import Base
 
@@ -34,10 +35,18 @@ refferal_refferers = Table(
 
 
 classroom_students = Table(
-    "classroom_students",
-    Base.metadata,
-    Column("student_id", UUID(as_uuid=True), ForeignKey("user.id"), primary_key=True),
-    Column("classroom_id", UUID(as_uuid=True), ForeignKey("classroom.id"), primary_key=True),
+	"classroom_students",
+	Base.metadata,
+	Column("student_id", UUID(as_uuid=True), ForeignKey("user.id"), primary_key=True),
+	Column("classroom_id", UUID(as_uuid=True), ForeignKey("classroom.id"), primary_key=True),
+)
+
+
+users_tasks = Table(
+	"users_tasks",
+	Base.metadata,
+	Column("user_id", UUID(as_uuid=True), ForeignKey("user.id"), primary_key=True),
+	Column("task_id", UUID(as_uuid=True), ForeignKey("task.id"), primary_key=True),
 )
 
 
@@ -56,10 +65,13 @@ class User(Base):
 	students: Mapped[list["User"]] = relationship("User", secondary=teacher_students, back_populates="teacher")
 
 	classrooms_teacher: Mapped[List["Classroom"]] = relationship("Classroom", back_populates="teacher", cascade="all,delete-orphan")
-	classroom_student: Mapped["Classroom"] = relationship("Classroom", secondary=classroom_students, backref="students_in_class")
+	classroom_student: Mapped["Classroom"] = relationship("Classroom", secondary=classroom_students, backref="students")
 
 	refferals: Mapped[list["User"]] = relationship("User", secondary=refferal_refferers, back_populates="refferer")
 	refferer: Mapped["User"] = relationship("User", secondary=refferal_refferers, back_populates="refferals")
+
+	tasks: Mapped[list["Task"]] = relationship("Task", secondary=users_tasks, back_populates="users")
+	work:  Mapped["Work"] = relationship("Work", back_populates="students")
 
 
 class TaskType(str, enum.Enum):
@@ -73,8 +85,11 @@ class Task(Base):
 	type: Mapped[TaskType] = mapped_column(Enum(TaskType), nullable=False, index=True)
 	files_url: Mapped[str] = mapped_column(String(250), nullable=True) #ссылка на папку в s3 /tasks/task_uuid/
 	description: Mapped[str] = mapped_column(String(150), nullable=True)
-	created_at: Mapped[Any] = mapped_column(DateTime(timezone=True), server_default=func.now(), index=True)
-	deadline: Mapped[Any] = mapped_column(DateTime(timezone=True), index=True, nullable=True)
+	created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now(), index=True)
+	deadline: Mapped[datetime] = mapped_column(DateTime(timezone=True), index=True, nullable=True)
+
+	users: Mapped[list["User"]] = relationship("User", secondary=users_tasks, back_populates="tasks")
+	works: Mapped[list["Work"]] = relationship("Work", back_populates="task")
 
 
 class WorkStatus(str, enum.Enum):
@@ -86,8 +101,15 @@ class Work(Base):
 	status       : Mapped[WorkStatus] = mapped_column(Enum(WorkStatus), nullable=False, index=True, default=WorkStatus.executing)
 	files_url    : Mapped[str] = mapped_column(String(100), nullable=False)
 	max_point    : Mapped[int] = mapped_column(Integer, nullable=True)
-	final_point : Mapped[int] = mapped_column(Integer, nullable=True)
+	final_point  : Mapped[int] = mapped_column(Integer, nullable=True)
 	finish_date  : Mapped[datetime] = mapped_column(DateTime(timezone=True), index=True, nullable=True)
+
+	task_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), ForeignKey("task.id"), nullable=False)
+	student_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), ForeignKey("user.id", ondelete="CASCADE"), nullable=False)
+
+	task: Mapped["Task"] = relationship("Task", foreign_keys=[task_id], back_populates="works")
+	students: Mapped[list["User"]] = relationship("User", back_populates="work")
+	
 
 
 
@@ -103,28 +125,15 @@ class Classroom(Base):
 	teacher_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), ForeignKey("user.id"), nullable=False)
 
 	teacher:  Mapped["User"] = relationship(
-     	"User",
+		"User",
 		foreign_keys=[teacher_id],
 		back_populates="classrooms_teacher"
 	)
 
-	students_in_class: Mapped[list["User"]] = relationship(
+	students: Mapped[list["User"]] = relationship(
 		"User",
 		secondary=classroom_students,
 		primaryjoin=id == classroom_students.c.classroom_id,
 		secondaryjoin=User.id == classroom_students.c.student_id,
 		backref="classrooms"
 	)
-
-	
-
-
-
-# Настроил связи между 
-# учителями - классами, 
-# студентами - классами
-# рефералы - рефереры
-# студенты - учителя
-
-
-# Еще работы задания учителя учиники
