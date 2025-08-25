@@ -19,13 +19,12 @@ class Classroom(Base):
 
 	teacher:  Mapped["User"] = relationship(
 		"User",
-		foreign_keys=[teacher_id],
 		back_populates="classrooms_teacher"
 	)
 
 	students: Mapped[list["User"]] = relationship(
 		"User",
 		secondary=classroom_students,
-		backref="classrooms"
+		back_populates="classroom_student"
 	)
 

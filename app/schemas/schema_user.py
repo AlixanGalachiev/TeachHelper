@@ -9,8 +9,11 @@ class UserRole(str, Enum):
 
 class UserBase(BaseModel):
     email: EmailStr
-    full_name: Optional[str] = None
+    first_name: str
+    middle_name: str | None = None
+    last_name: str 
     role: UserRole
+
 
 class UserLogin(BaseModel):
     email: EmailStr
@@ -21,8 +24,11 @@ class UserCreate(UserBase):
 
 
 class UserUpdate(BaseModel):
-    full_name: Optional[str] = None
-    role: Optional[Literal["teacher", "student"]] = None
+    first_name: str
+    middle_name: str | None = None
+    last_name: str
+    old_password: str
+    new_password: str
 
 
 class UserRead(UserBase):
