@@ -3,8 +3,9 @@ from sqlalchemy import select, update, delete
 from sqlalchemy.ext.asyncio import AsyncSession
 from passlib.hash import bcrypt
 
-from app.models.models import *
-from app.schemas.schema_user import UserCreate
+from app.models import *
+
+from app.schemas import UserCreate, SubscriptionCreate, SubscriptionRead, SubscriptionUpdate
 from app.utils.password import get_password_hash
 from datetime import datetime
 import uuid

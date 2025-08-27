@@ -1,8 +1,12 @@
 import uuid
 from typing import Optional, Sequence
-from sqlalchemy import select, delete, insert
+from sqlalchemy import select, delete, insert, update
+from sqlalchemy.orm import selectinload
 from sqlalchemy.ext.asyncio import AsyncSession
 from app.models.model_classroom import Classroom
+from app.models.model_user import User, classroom_students
+from app.models.model_work import Work
+from app.models.model_task import Task
 
 
 class ClassroomRepo:
@@ -10,7 +14,6 @@ class ClassroomRepo:
 		self.session = session
 
 
-	@staticmethod
 	async def create(self, name: str, teacher_id: int) -> Classroom:
 		classroom = Classroom(name=name, teacher_id=teacher_id)
 		self.session.add(classroom)
@@ -18,21 +21,15 @@ class ClassroomRepo:
 		return classroom
 
 
-	@staticmethod
-	async def add_student(self, classroom_id: int, student_id: int) -> None:
-		await self.session.execute(
-			insert(classroom_students).values(classroom_id=classroom_id, student_id=student_id)
-		)
-		await self.session.flush()
-
-
-	@staticmethod
 	async def get(self, classroom_id: int) -> Optional[Classroom]:
-		res = await self.session.execute(select(Classroom).where(Classroom.id == classroom_id))
+		res = await self.session.execute(
+			select(Classroom)
+			.where(Classroom.id == classroom_id)
+			.options(selectinload(Classroom.students))
+			)
 		return res.scalar_one_or_none()
 
 
-	@staticmethod
 	async def get_statistic(self, classroom_id: uuid.UUID):
 		# Получаем студентов в классе
 		stmt = (
@@ -65,7 +62,6 @@ class ClassroomRepo:
 		}
 
 
-	# @staticmethod
 	# async def add_student(self, classroom_id: uuid.UUID, student_id: uuid.UUID):
 	#     # Проверяем, что студент ещё не в классе
 	#     stmt = select(classroom_students).where(
@@ -83,7 +79,6 @@ class ClassroomRepo:
 	#     return {"message": "Student added"}
 
 
-	# @staticmethod
 	# async def remove_student(self, classroom_id: uuid.UUID, student_id: uuid.UUID):
 	#     stmt = delete(classroom_students).where(
 	#         classroom_students.c.classroom_id == classroom_id,
@@ -94,20 +89,7 @@ class ClassroomRepo:
 	#     return {"deleted": result.rowcount}
 
 
-	@staticmethod
-	async def rename(self, classroom_id: uuid.UUID, new_name: str):
-		stmt = (
-			update(Classroom)
-			.where(Classroom.id == classroom_id)
-			.values(name=new_name)
-			.execution_options(synchronize_session="fetch")
-		)
-		await self.session.execute(stmt)
-		await self.session.flush()
-		return {"message": f"Classroom renamed to {new_name}"}
 
-
-	# @staticmethod
 	# async def delete(self, classroom_id: uuid.UUID):
 	#     # Сначала удаляем связи с учениками
 	#     await self.session.execute(

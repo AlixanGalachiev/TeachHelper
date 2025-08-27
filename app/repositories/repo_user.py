@@ -41,9 +41,8 @@ class UserRepo:
 	async def update(self, user_id: int, **fields) -> Optional[User]:
 		if "password" in fields:
 			fields["password_hash"] = bcrypt.hash(fields.pop("password"))
-		await self.session.execute(update(User).where(User.id == user_id).values(**fields))
-		await self.session.flush()
-		return await self.get(user_id)
+		result = await self.session.execute(update(User).where(User.id == user_id).values(**fields).returning(User))
+		return result.scalar_one_or_none()
 
 	async def delete(self, user_id: int) -> bool:
 		await self.session.execute(delete(User).where(User.id == user_id))

@@ -1,20 +1,22 @@
-# tests/test_user_repository.py
+# tests/test_repo_usersitory.py
 import pytest
-from app.models.model_user import Role
-from app.repositories.repo_user import UserRepository
+from app.models.model_user import RoleUser
+from app.repositories.repo_user import UserRepo
 from app.schemas.schema_user import UserCreate
+from app.utils.password import verify_password
 
 @pytest.mark.asyncio
-async def test_create_and_get_user(session):
-		repo = UserRepository(session)
-
+async def test_repo_user(session):
+		repo_user = UserRepo(session)
 		# Создаём пользователя
-		user = await repo.create(
+		user = await repo_user.create(
 			UserCreate(
 				email="test@example.com",
 				password="123456",
-				full_name="Test User",
-				role=Role.student
+				first_name = "Ali", 
+				middle_name = "Mara", 
+				last_name = "Gall",
+				role=RoleUser.student
 			)
 		)
 
@@ -23,12 +25,20 @@ async def test_create_and_get_user(session):
 		assert user.id is not None
 		assert user.email == "test@example.com"
 
-		# Проверяем поиск по email
-		found = await repo.get_by_email("test@example.com")
-		assert found is not None
-		assert found.email == "test@example.com"
 
-		await repo.delete(user.id)
+		user_by_email = await repo_user.get_by_email("test@example.com")
+		assert user_by_email is not None
+		assert user_by_email.email == "test@example.com"
+
+		user_updated = await repo_user.update(user.id, first_name = "ali_new", password="111111")
+		assert user.id == user_updated.id
+		assert user_updated.first_name == "ali_new"
+		assert verify_password("111111", user_updated.password_hash)
+
 		await session.commit()
-  
 
+		await repo_user.delete(user.id)
+		await session.commit()
+
+		response = await repo_user.get(user.id)
+		response == None
