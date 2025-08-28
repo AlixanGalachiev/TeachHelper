@@ -6,79 +6,10 @@ from sqlalchemy import insert
 
 from app.models import User, Work, WorkStatus, Task, CreateWork, CreateTask, TaskType, Classroom, classroom_students
 from app.repositories import TaskRepo, WorkRepo
-@pytest_asyncio.fixture()
-async def db_objects(users, session):
-
-	teacher = users["teacher"]
-	student = users["student"]
-
-	# создание задачи
-	task_data = CreateTask(
-		name       = "Task 101",
-		type       = TaskType.dictation,
-		max_point  = 10,
-		teacher_id = teacher.id,
-	)
-
-	task = Task(**task_data.model_dump())
-	session.add(task)
-	await session.flush()
-
-
-	# создание класса
-	classroom = Classroom(name="class 1", teacher_id = teacher.id)
-	session.add(classroom)
-	await session.flush()
-	await session.refresh(classroom)
-	
-	cr_sts_response = await session.execute(
-		(insert(classroom_students)
-		.values(
-				student_id = student.id,
-				classroom_id = classroom.id
-			)
-		.returning(classroom_students)
-		)
-	)
-	cr_sts_rows = cr_sts_response.mappings().all()
-
-
-	# создание работы
-	work_data = CreateWork(
-		files_url  =  'urllll',
-		task_id    =  task.id,
-		student_id =  student.id,
-	)
-	work = Work(**work_data.model_dump())
-	work.status = WorkStatus.executing
-	session.add(work)
-	await session.commit()
-	await session.refresh(task)
-	await session.refresh(work)
-	await session.refresh(student)
-	return {
-		"work": work,
-		"task": task,
-		"student": student,
-		"teacher": teacher,
-		"classroom": classroom,
-		"cr_sts_rows": cr_sts_rows
-	}
-	
-
-
 
 
 @pytest.mark.asyncio
 async def test_teacher_get_works(db_objects, session):
-
-	work        = db_objects['work']
-	task        = db_objects['task']
-	student     = db_objects['student']
-	teacher     = db_objects['teacher']
-	classroom   = db_objects['classroom']
-	cr_sts_rows = db_objects['cr_sts_rows']
-
 	repo = WorkRepo(session)
 
 	# teacher_get_works
