@@ -69,7 +69,7 @@ VALUES
 -- work
 -- =========================
 
-INSERT INTO work (id, status, files_url, task_id, student_id, finish_date)
+INSERT INTO work (id, status, files, task_id, student_id, finish_date)
 VALUES
     ('77777777-7777-7777-7777-777777777777', 'executing', 'url1', '55555555-5555-5555-5555-555555555555', 'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa', now()),
     ('88888888-8888-8888-8888-888888888888', 'draft', 'url2', '55555555-5555-5555-5555-555555555555', 'bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb', null),

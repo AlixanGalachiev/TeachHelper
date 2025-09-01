@@ -14,11 +14,10 @@ class WorkRepo:
 	async def teacher_get_works(
 		self,
 		teacher_id : uuid.UUID,
-		class_name : str | None        = None,
-		student_id : uuid.UUID | None  = None,
-		status     : WorkStatus | None = None,
-		limit      : int = 10,
-		offset     : int = 0,
+		statuses     : list[WorkStatus],
+		limit      : int,
+		offset     : int,
+		students_ids : list[uuid.UUID] | None  = None,
 	):
 		Teacher = aliased(User)
 		Student = aliased(User)
@@ -57,8 +56,8 @@ class WorkRepo:
 				Student.id == classroom_students.c.student_id
 			])
 
-		if status is not None:
-			filters.append(Work.status == status)
+		if statuses is not None:
+			filters.append(Work.statusst._in(statuses))
 
 		stmt = stmt.where(*filters).limit(limit).offset(offset)
 
@@ -71,8 +70,8 @@ class WorkRepo:
 	async def student_get_works(
 		self,
 		student_id: uuid.UUID,
-		limit: int = 10,
-		offset: int = 0,
+		limit: int,
+		offset: int,
 	):
 		Teacher = aliased(User)
 		Student = aliased(User)
@@ -110,14 +109,16 @@ class WorkRepo:
 
 		stmt = (
 			select(
+				Work.id.label("work_id"),
 				Task.name.label("taskname"),
-				Student.first_name,
-				Student.middle_name,
-				Student.last_name,
-				Work.points,
-				Task.max_point,
-				Work.files_url.label("work_files_url"),
-				Task.files_url.label("task_files_url"),
+				Task.description.label("description"),
+				Student.first_name.label("first_name"),
+				Student.middle_name.label("middle_name"),
+				Student.last_name.label("last_name"),
+				Work.points.label("points"),
+				Task.max_point.label("max_point"),
+				Work.files.label("work_files"),
+				Task.files.label("task_files")
 				# comment
 			)
 			.join(Task, Task.id == Work.task_id)
@@ -128,6 +129,5 @@ class WorkRepo:
 		)
 
 		result = await self.session.execute(stmt)
-		rows = result.all()
-		return rows
-
+		row = result.mappings().one_or_none()
+		return row

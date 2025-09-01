@@ -100,7 +100,7 @@ CREATE TABLE task (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     name VARCHAR(100) NOT NULL,
     type VARCHAR(50) NOT NULL,
-    files_url VARCHAR(250),
+    files VARCHAR(250),
     max_point INT NOT NULL,
     description VARCHAR(150),
     created_at TIMESTAMPTZ DEFAULT now(),
@@ -121,7 +121,7 @@ VALUES
 CREATE TABLE work (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     status VARCHAR(50) NOT NULL DEFAULT 'draft',
-    files_url VARCHAR(100) NOT NULL,
+    files VARCHAR(100) NOT NULL,
     points INT,
     finish_date TIMESTAMPTZ,
     task_id UUID REFERENCES task(id),
@@ -130,7 +130,7 @@ CREATE TABLE work (
     updated_at TIMESTAMPTZ DEFAULT now()
 );
 
-INSERT INTO work (id, status, files_url, task_id, student_id)
+INSERT INTO work (id, status, files, task_id, student_id)
 VALUES
     ('77777777-7777-7777-7777-777777777777', 'executing', 'url1', '55555555-5555-5555-5555-555555555555', 'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa'),
     ('88888888-8888-8888-8888-888888888888', 'draft', 'url2', '55555555-5555-5555-5555-555555555555', 'bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb'),
