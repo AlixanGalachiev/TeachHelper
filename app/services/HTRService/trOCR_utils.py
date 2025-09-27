@@ -1,6 +1,8 @@
 import torch
 import numpy as np
 import matplotlib.pyplot as plt
+import os
+import cv2
 
 
 def clamp(min_val, max_val, value):
@@ -66,7 +68,6 @@ def combining_boxes(groups):
 
     return groups
 
-
 def show_groups(image, groups):
     temp = image.copy()
     groups = combining_boxes(groups)
@@ -82,3 +83,20 @@ def show_groups(image, groups):
     plt.imshow(temp)
     plt.axis('off')
     plt.show()
+
+def save_error_image(image, groups, save_path: str):
+    temp = image.copy()
+    groups = combining_boxes(groups)
+
+    for group in groups:
+        color = np.random.randint(256, size=3).tolist()
+
+        for box in group:
+            x1, y1, x2, y2 = map(int, box)
+            temp = cv2.rectangle(temp, (x1, y1), (x2, y2), color=color, thickness=3)
+
+    # создаём папку, если её ещё нет
+    os.makedirs(os.path.dirname(save_path), exist_ok=True)
+
+    # сохраняем изображение
+    cv2.imwrite(save_path, temp)

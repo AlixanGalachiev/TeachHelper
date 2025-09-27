@@ -1,28 +1,31 @@
 import torch
+import cv2
+import os
+import requests
 
 from yolo_detection import text_detection, yolo_result_to_boxes
-from trOCR_utils import boxes_to_groups, combining_boxes
+from trOCR_utils import boxes_to_groups, combining_boxes, save_error_image
 from transformers import GenerationConfig, TrOCRProcessor, VisionEncoderDecoderModel
 
 def beam_search(model, processor):
-    model.config.decoder_start_token_id = processor.tokenizer.cls_token_id
-    model.config.pad_token_id = processor.tokenizer.pad_token_id
-    model.config.vocab_size = model.config.decoder.vocab_size
+	model.config.decoder_start_token_id = processor.tokenizer.cls_token_id
+	model.config.pad_token_id = processor.tokenizer.pad_token_id
+	model.config.vocab_size = model.config.decoder.vocab_size
 
 
-    # set beam search parameters
-    generation_config = GenerationConfig(
-        max_length=64,
-        early_stopping=True,
-        no_repeat_ngram_size=3,
-        length_penalty=2.0,
-        num_beams=4
-    )
-    model.generation_config = generation_config
+	# set beam search parameters
+	generation_config = GenerationConfig(
+		max_length=64,
+		early_stopping=True,
+		no_repeat_ngram_size=3,
+		length_penalty=2.0,
+		num_beams=4
+	)
+	model.generation_config = generation_config
 
-    model.generation_config.eos_token_id = processor.tokenizer.sep_token_id
-    model.generation_config.decoder_start_token_id = processor.tokenizer.cls_token_id
-    model.generation_config.pad_token_id = processor.tokenizer.pad_token_id
+	model.generation_config.eos_token_id = processor.tokenizer.sep_token_id
+	model.generation_config.decoder_start_token_id = processor.tokenizer.cls_token_id
+	model.generation_config.pad_token_id = processor.tokenizer.pad_token_id
 
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
@@ -38,16 +41,17 @@ text_recognition.to(device)
 
 
 def recognize(image):
-    pixel_values = text_processor(images=image, return_tensors="pt").pixel_values.to(device)
+	pixel_values = text_processor(images=image, return_tensors="pt").pixel_values.to(device)
 
-    generated_ids = text_recognition.generate(pixel_values)
-    generated_text = text_processor.batch_decode(generated_ids, skip_special_tokens=True)[0]
-    return generated_text
+	generated_ids = text_recognition.generate(pixel_values)
+	generated_text = text_processor.batch_decode(generated_ids, skip_special_tokens=True)[0]
+	return generated_text
 
 
 
 def recognize_text(image, groups):
     result = ''
+    metadata: dict[str, list]= {}
 
     for group in groups:
         for box in group:
@@ -55,19 +59,59 @@ def recognize_text(image, groups):
             crop = image[y1:y2, x1:x2]
             word = recognize(crop)
             result += word + ' '
+            if word in metadata:
+                metadata[word].append(box)
+            else:
+                metadata[word] = [box]
 
         result = result[:-1]
         result += '\n'
 
     result = result[:-1]
-    return result
+    return {
+        "metadata": metadata,
+        "text": result
+    }
 
 
 
-def recognize_text(img_path):
-	yolo_result = text_detection(img_path, conf=0.3)[0]
-	yolo_boxes = yolo_result_to_boxes(yolo_result)
-	yolo_groups = boxes_to_groups(yolo_boxes)
-	combined_groups = combining_boxes(yolo_groups)
+def handle_images(images_paths: list[str], save_folder: str):
+    results = []
+    for image_path in images_paths:
+        image = cv2.imread(image_path)
+        image = cv2.resize(image, (1280, 900))
 
-	return recognize_text(img_path, combined_groups)
+        yolo_result = text_detection(image, conf=0.3)[0]
+        yolo_boxes = yolo_result_to_boxes(yolo_result)
+        yolo_groups = boxes_to_groups(yolo_boxes)
+
+        recognition_result = recognize_text(image, yolo_groups)
+
+        checking_results = check_text(recognition_result['text'])
+        if len(checking_results) > 0:
+            error_boxes = []
+            for speller_data in checking_results:
+                if speller_data['word'] in recognition_result['metadata']:
+                    error_boxes.append(recognition_result['metadata'][speller_data['word']])
+
+            save_error_image(image, error_boxes, f"{save_folder}/{os.path.basename(image_path)}")
+            results.append([
+              image_path,
+              error_boxes,
+              recognition_result["text"]])
+
+        else:
+          results.append([image_path, recognition_result["text"]])
+
+    return results
+
+def check_text(text: str):
+  try:
+    url = "https://speller.yandex.net/services/spellservice.json/checkText"
+    params = {'text': text}
+
+    response = requests.get(url, params=params)
+    return response.json()
+
+  except Exception as e:
+    raise Exception(f"Ошибка запроса Яндекс спеллера: {response.status_code}")
