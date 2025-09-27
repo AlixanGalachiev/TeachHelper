@@ -1,11 +1,5 @@
 import logging
 
-logger = logging.getLogger("teachHelper")
-
-logging.basicConfig(
-	level=logging.INFO,
-)
-
 formatter = logging.Formatter("%(asctime)s [%(levelname)s] %(name)s: %(message)s")
 
 logger = logging.getLogger("my_app")

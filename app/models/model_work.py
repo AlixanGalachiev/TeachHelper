@@ -3,7 +3,7 @@ from sqlalchemy.dialects.postgresql import UUID, ARRAY
 from typing import List, Optional
 from sqlalchemy.sql import func
 from sqlalchemy.orm import Mapped, mapped_column, relationship
-from sqlalchemy import String, Enum, DateTime, Integer, ForeignKey, Column, Table
+from sqlalchemy import String, Enum, DateTime, Integer, ForeignKey, Column, Table, Boolean
 
 import enum
 from datetime import datetime
@@ -23,10 +23,11 @@ class WorkStatus(str, enum.Enum):
 
 class Work(Base):
 	status       : Mapped[WorkStatus] = mapped_column(Enum(WorkStatus), index=True, default=WorkStatus.draft, nullable=False)
-	files    : Mapped[list[str]] = mapped_column(ARRAY(String), nullable=False)
+	images        : Mapped[list[str]] = mapped_column(ARRAY(String), nullable=False)
 	points       : Mapped[int] = mapped_column(Integer, nullable=True)
 	finish_date  : Mapped[datetime] = mapped_column(DateTime(timezone=True), index=True, nullable=True)
 	teacher_comment: Mapped[str] = mapped_column(String(250), nullable=True)
+	verifed_by_ai: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
 
 	task_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), ForeignKey("task.id"), nullable=False)
 	student_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), ForeignKey("user.id", ondelete="CASCADE"), nullable=False)

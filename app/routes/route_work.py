@@ -1,15 +1,24 @@
-from fastapi import APIRouter, Depends, HTTPException, status, File, UploadFile
+import uuid
+from fastapi import APIRouter, Depends, HTTPException, status, File, UploadFile, BackgroundTasks
+from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 from fastapi.security import OAuth2PasswordRequestForm
-from app.db import get_async_session
-from app.repositories.repo_user import UserRepo
-from app.schemas.schema_user import UserCreate, UserRead
-from app.utils.oAuth import create_access_token
-from app.utils.password import verify_password
+from app.db import get_async_session, get_sync_session
+from app.models.model_classroom import Classroom
+from app.models.model_error_comment import ErrorComment
+from app.models.model_work import Work, WorkStatus
+from app.repositories.repo_work import WorkRepo
+from app.schemas.schema_error_comment import ErrorCommentCreate
+from app.schemas.schema_user import UserRole
+from app.schemas.schema_work import UpdateWorkByTeacher, WorkDetailRead, WorksGetByTeacher
+from app.services.HTRService.trOCR_recognition import handle_images
 from app.utils.logger import logger
 from datetime import datetime, timezone
 
 import os
+import cv2
+
+from app.utils.oAuth import get_current_user
 
 router = APIRouter(prefix="/works", tags=["works"])
 
@@ -19,7 +28,7 @@ os.makedirs(UPLOAD_DIR, exist_ok=True)
 
 @router.get("/teacher")
 async def get_works_by_teacher(
-    external_filters: WorksGetByTeacher,
+	external_filters: WorksGetByTeacher,
 	db: AsyncSession = Depends(get_async_session),
 	current_user = Depends(get_current_user),
 	limit      : int = 10,
@@ -32,13 +41,13 @@ async def get_works_by_teacher(
 		classroom_stmt = select(Classroom.id).where(
 			Classroom.name.in_(classroom_names)
 		)
-		response = await db.session.execute(classroom_stmt)
+		response = await db.db.execute(classroom_stmt)
 		classroom_ids = response.scalars().all()
 
 		user_ids_stmt = select(classroom_students.c.student_id).where(
 			classroom_students.c.classroom_id.in_(classroom_ids)
 		)
-		response = await db.session.execute(classroom_stmt)
+		response = await db.db.execute(classroom_stmt)
 		classroom_students_ids = response.scalars().all()
 		external_filters.student_ids.append(*classroom_students_ids)
 
@@ -59,7 +68,7 @@ async def get_works_by_teacher(
 		return [WorkRow(**row) for row in response]
 
 	except:
-		session.rollback()
+		db.rollback()
 		await db.rollback()
 		raise HTTPException(status_code=500, detail="Internal Server Error")
 
@@ -71,17 +80,17 @@ async def get_works_by_teacher(
 	limit      : int = 10,
 	offset     : int = 0,
 ):
-    try:
+	try:
 		repo = WorkRepo(db)
 		rows = await repo.student_get_works(current_user.id, limit, offset)
 		return [WorkRow(**row) for row in response]
 	except:
-		session.rollback()
+		db.rollback()
 		await db.rollback()
 		raise HTTPException(status_code=500, detail="Internal Server Error")
 	
 
-@router.patch("/{work_id}/verify")
+@router.patch("/{work_id}/verification/finish")
 async def verify_work(
 	work_id: uuid.UUID,
 	work_data: UpdateWorkByTeacher,
@@ -105,10 +114,11 @@ async def verify_work(
 			]
 
 			db.add_all(new_comments)
-		filtered_data = work_data.dict(exclude_none=True)
+		filtered_data = work_data.model_dump(exclude_none=True)
 
-		for field, value in data.items():
+		for field, value in filtered_data.items():
 			setattr(work, field, value)
+		work.status = WorkStatus.checked
 
 		await db.commit()
 		await db.refresh(work)
@@ -121,29 +131,8 @@ async def verify_work(
 	return {"work_data": work, "error_comments": work.error_comments}
 
 
-@router.patch("/{work_id}/finish_verification")
-async def finish_work_verification(
-	work_id: uuid.UUID,
-	db: AsyncSession = Depends(get_async_session),
-	current_user = Depends(get_current_user)
-):
-	try:
-		work = await db.get(Work, work_id)
-		if not work:
-			raise HTTPException(status_code=404, detail="Work not found")
-
-		work.status = WorkStatus.checked
-		await db.commit()
-		return True
-
-	except Exception as e:
-		logger.error(f"Ошибка при завершении проверки: {e}", exc_info=True)
-		await db.rollback()
-		raise HTTPException(status_code=500, detail="Internal Server Error")
-
-
-@router.patch("/{work_id}/start")
-async def start_task_completion(
+@router.patch("/{work_id}/execution/start")
+async def start_task_execution(
 	work_id: uuid.UUID,
 	db:AsyncSession = Depends(get_async_session),
 	current_user = Depends(get_current_user)
@@ -162,7 +151,7 @@ async def start_task_completion(
 		raise HTTPException(status_code=500, detail="Internal Server Error")
 		
 
-@router.patch("/{work_id}/update")
+@router.patch("/{work_id}/execution/update")
 async def update_work_by_student(
 	work_id: uuid.UUID,
 	files: list[UploadFile] = File(...),
@@ -206,10 +195,11 @@ async def update_work_by_student(
 		raise HTTPException(status_code=500, detail="Internal Server Error")
 	
 	
-@router.patch("/{work_id}/finish")
+@router.patch("/{work_id}/execution/finish")
 async def finish_work_completion(
 	work_id: uuid.UUID,
 	db: AsyncSession = Depends(get_async_session),
+	background_tasks: BackgroundTasks = None,
 	current_user = Depends(get_current_user)
 ):
 	try:
@@ -220,11 +210,14 @@ async def finish_work_completion(
 		work.status = WorkStatus.on_checking
 		work.finish_date = datetime.now(timezone.utc)
 
+		work = await db.get(Work, work_id)
+		background_tasks.add_task(verificate_work_by_ai, work_id)
+
 		await db.commit()
 		return True
 
 	except:
-		session.rollback()
+		db.rollback()
 		await db.rollback()
 		raise HTTPException(status_code=500, detail="Internal Server Error")
 
@@ -237,13 +230,24 @@ async def detail(
 ):
 	try:
 		repo = WorkRepo(db)
-		row = await self.repo.detail(work_id)
+		row = await repo.detail(work_id)
 		if not row:
 			raise HTTPException(status_code=404, detail="Work not found")
 		return WorkDetailRead(**row)
 
 	except:
-		session.rollback()
+		db.rollback()
 		await db.rollback()
 		raise HTTPException(status_code=500, detail="Internal Server Error")
 
+
+def verificate_work_by_ai(work_id: uuid.UUID):
+	with get_sync_session() as session:
+		work = session.get(Work, work_id)
+		handle_results = handle_images(work.images)
+
+		for img_path, image in handle_results:
+			cv2.imwrite(f"{os.getenv('WORK_ERROR_IMAGES')}/{os.path.basename(img_path)}", image)
+
+		work.verifed_by_ai = True
+		session.commit()
