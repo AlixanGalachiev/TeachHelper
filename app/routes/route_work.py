@@ -36,7 +36,7 @@ async def get_works_by_teacher(
 ):
 	try:
 		if current_user.role != UserRole.teacher:
-			raise HTTPException(status_code=403, "Wrong user role")
+			raise HTTPException(status_code=403, detail= "Wrong user role")
 			
 		classroom_stmt = select(Classroom.id).where(
 			Classroom.name.in_(classroom_names)
@@ -51,12 +51,12 @@ async def get_works_by_teacher(
 		classroom_students_ids = response.scalars().all()
 		external_filters.student_ids.append(*classroom_students_ids)
 
-		filters = [
+		filters = {
 			"teacher_id": current_user.id,
 			"limit": limit,
 			"offset": offset,
 			"statuses": work_statuses
-		]
+		}
 
 		if len(external_filters.student_ids) != 0:
 			filters['students_ids'] = external_filters.student_ids

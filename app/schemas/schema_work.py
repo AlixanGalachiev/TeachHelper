@@ -47,7 +47,7 @@ class WorksFiltersTeacher(BaseModel):
 
 class WorksGetByTeacher(BaseModel):
 	student_ids:     list[uuid.UUID] | None = None
-	classroom_names: list[classname]  | None = None
+	classroom_names: list[str]  | None = None
 	work_statuses:     list[WorkStatus] = [WorkStatus.on_checking, WorkStatus.checked]
 
 

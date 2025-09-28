@@ -6,14 +6,16 @@ from sqlalchemy.ext.asyncio import create_async_engine, async_sessionmaker, Asyn
 from sqlalchemy import create_engine, text
 from app.db import get_async_session
 from app.models.base import Base
-from app.models.model_user import User, RoleUser
-from app.utils.password import get_password_hash
+
 from main import app
 import re
 from pathlib import Path
 from pprint import pprint
 
 from app.settings import settings
+from dotenv import load_dotenv
+
+load_dotenv()
 
 # Создаём движок и одно соединение
 sync_engine = create_engine(settings.sync_url, future=True)

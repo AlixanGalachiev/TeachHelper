@@ -13,7 +13,7 @@ from .base import Base
 from .model_user import classroom_students
 
 
-class ErrorComment(str, enum.Enum):
+class ErrorType(str, enum.Enum):
 	Spelling    = "Орфографическая"
 	Grammar     = "Грамматическая"
 	Punctuation = "Пунктуационная"
@@ -26,7 +26,7 @@ class ErrorComment(str, enum.Enum):
 
 
 class ErrorComment(Base):
-	type: Mapped[ErrorComment] = mapped_column(Enum(ErrorComment), nullable=False)
+	type: Mapped[ErrorType] = mapped_column(Enum(ErrorType), nullable=False)
 	description: Mapped[str] = mapped_column(String(250), nullable=True) # в будущем добавить автодополнение по типу если с фронта не передали
 
 	work_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), nullable=False)

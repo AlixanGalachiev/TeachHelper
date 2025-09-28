@@ -5,9 +5,12 @@ import os
 import requests
 import numpy as np
 
-from yolo_detection import text_detection, yolo_result_to_boxes
-from trOCR_utils import boxes_to_groups, show_errors
+from .yolo_detection import text_detection, yolo_result_to_boxes
+from .trOCR_utils import boxes_to_groups, show_errors
 from transformers import GenerationConfig, TrOCRProcessor, VisionEncoderDecoderModel
+from huggingface_hub import login
+
+login(token=os.getenv("HUGGINGFACE_HUB_TOKEN"))
 
 from app.utils.logger import logger
 
@@ -104,6 +107,7 @@ def handle_images(images_paths: list[str]) -> list[dict[str, np.ndarray]]:
 		except Exception as e:
 			logger.error(f"{e} картинка - {image_path}", exc_info=True)
 
+	return results
 
 def check_text(text: str):
 	try:
