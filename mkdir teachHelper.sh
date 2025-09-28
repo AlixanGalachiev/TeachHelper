@@ -1,5 +1,12 @@
 #!/bin/sh
 
+apt update
+apt install software-properties-common -y
+add-apt-repository ppa:deadsnakes/ppa -y
+apt update
+apt install python3.12 python3.12-venv python3.12-dev -y
+
+
 mkdir teachHelper
 cd teachHelper/
 git init
@@ -12,8 +19,8 @@ mkdir pulic
 mv pulic/ public
 cd public/
 mkdir work task
-python3 -m venv .venv
-sudo apt update
-sudo apt install cloud-init
+python3.12 -m venv .venv
 source .venv/bin/activate
+pip install --upgrade pip setuptools wheel
+sudo apt install -y python3.12-dev libpq-dev build-essential
 pip install -r requirements.txt
