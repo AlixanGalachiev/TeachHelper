@@ -1,5 +1,5 @@
 import pytest
-from app.schemas.schema_user import UserCreate
+from app.schemas.schema_auth import UserCreate
 
 @pytest.mark.asyncio
 async def test_register_and_login(async_client):

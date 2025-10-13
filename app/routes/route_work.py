@@ -9,7 +9,7 @@ from app.models.model_error_comment import ErrorComment
 from app.models.model_work import Work, WorkStatus
 from app.repositories.repo_work import WorkRepo
 from app.schemas.schema_error_comment import ErrorCommentCreate
-from app.schemas.schema_user import UserRole
+from app.schemas.schema_auth import UserRole
 from app.schemas.schema_work import UpdateWorkByTeacher, WorkDetailRead, WorksGetByTeacher
 from app.services.HTRService.trOCR_recognition import handle_images
 from app.utils.logger import logger

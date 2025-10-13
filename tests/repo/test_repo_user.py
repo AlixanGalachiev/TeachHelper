@@ -2,7 +2,7 @@
 import pytest
 from app.models.model_user import RoleUser
 from app.repositories.repo_user import UserRepo
-from app.schemas.schema_user import UserCreate
+from app.schemas.schema_auth import UserCreate
 from app.utils.password import verify_password
 
 @pytest.mark.asyncio

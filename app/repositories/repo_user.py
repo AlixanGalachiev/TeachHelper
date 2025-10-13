@@ -4,7 +4,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from passlib.hash import bcrypt
 
 from app.models.model_user import RoleUser, User
-from app.schemas.schema_user import UserCreate
+from app.schemas.schema_auth import UserRegister
 from app.utils.password import get_password_hash
 from datetime import datetime
 
@@ -13,17 +13,8 @@ class UserRepo:
 	def __init__(self, session: AsyncSession):
 		self.session = session
 
-	async def create(self, user_data: UserCreate) -> User:
-		user = User(
-			email=user_data.email,
-			password_hash=get_password_hash(user_data.password),
-			first_name = user_data.first_name,
-			middle_name = user_data.middle_name,
-			last_name = user_data.last_name,
-			role=user_data.role,
-		)
+	async def create(self, user: User) -> User:
 		self.session.add(user)
-		await self.session.flush()
 		return user
 
 	async def get(self, user_id: int) -> Optional[User]:
