@@ -6,7 +6,7 @@ import os
 from dotenv import load_dotenv
 load_dotenv()
 
-from app import settings
+from app.config import config_app
 from app.utils.templates import render_template
 
 

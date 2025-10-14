@@ -4,7 +4,7 @@ from fastapi import HTTPException, status
 from pydantic import EmailStr
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app import settings
+from app.config import config_app
 from app.models.model_user import User
 from app.repositories.repo_user import UserRepo
 from app.schemas.schema_auth import UserRead, UserRegister, UserResetPassword, UserToken
@@ -61,7 +61,7 @@ class ServiceUser:
         user = await repo.get_by_email(email)
         
         token = create_access_token(email, timedelta.seconds(60))
-        reset_link = f"{settings.FRONT_URL}/reset-password?token={token}"
+        reset_link = f"{config_app.FRONT_URL}/reset-password?token={token}"
         await ServiceMail.send_mail_async(email, "Сброс пароля", "template_reset_password.html", {"name": user.first_name, "reset_link": reset_link})
         
         return {"message": "Письмо отправленно"}

@@ -12,7 +12,7 @@ import re
 from pathlib import Path
 from pprint import pprint
 
-from app.settings import settings
+from app.config.config_app import settings
 from dotenv import load_dotenv
 
 load_dotenv()
