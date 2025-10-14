@@ -1,0 +1,8 @@
+API
+/auth
+    /validate_email
+    /register
+    /login
+    /forgot_password
+    /reset_password
+    /me

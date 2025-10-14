@@ -46,8 +46,8 @@ class Task(Base):
  
 
 	teacher_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), ForeignKey("user.id"), nullable=False)
-	teacher: Mapped["User"] = relationship("User", back_populates="tasks")
-	works: Mapped[list["Work"]] = relationship("Work", back_populates="task")
+	# teacher: Mapped["User"] = relationship("User", back_populates="tasks")
+	# works: Mapped[list["Work"]] = relationship("Work", back_populates="task")
 
 
 

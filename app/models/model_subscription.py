@@ -23,6 +23,6 @@ class Subscription(Base):
 	price: Mapped[int] = mapped_column(Integer, nullable=False)
 	description: Mapped[str] = mapped_column(String(250), nullable=False)
 
-	users: Mapped[list["User"]] = relationship("User", back_populates="subscription")
+	# users: Mapped[list["User"]] = relationship("User", back_populates="subscription")
 
 

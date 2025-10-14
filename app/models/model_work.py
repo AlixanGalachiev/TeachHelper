@@ -32,8 +32,8 @@ class Work(Base):
 	task_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), ForeignKey("task.id"), nullable=False)
 	student_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), ForeignKey("user.id", ondelete="CASCADE"), nullable=False)
 
-	task: Mapped["Task"] = relationship("Task", back_populates="works")
-	student: Mapped[list["User"]] = relationship("User", back_populates="works")
+	# task: Mapped["Task"] = relationship("Task", back_populates="works")
+	# student: Mapped[list["User"]] = relationship("User", back_populates="works")
 
-	error_comments: Mapped[list["ErrorComment"]] = relationship("ErrorComment", back_populates="work", cascade="all, delete-orphan")
+	# error_comments: Mapped[list["ErrorComment"]] = relationship("ErrorComment", back_populates="work", cascade="all, delete-orphan")
 	

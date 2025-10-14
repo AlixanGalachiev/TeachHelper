@@ -38,7 +38,7 @@ class UserLogin(BaseModel):
     email: EmailStr
     password: str
 
-    model_config = { 
+    model_config = {
         "json_schema_extra": {
             "example": {
                 "email": "ivan@example.com",
@@ -46,9 +46,6 @@ class UserLogin(BaseModel):
             }
         }
     }
-
-class UserForgotPassword(BaseModel):
-    email: EmailStr
 
 class UserResetPassword(BaseModel):
     password: str
@@ -62,5 +59,5 @@ class UserRead(UserBase):
     }
 
 class UserToken(BaseModel):
-    access_token: str|None = None
     token_type: str|None = None
+    access_token: str|None = None

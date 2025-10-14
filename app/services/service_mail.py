@@ -1,20 +1,33 @@
+import aiosmtplib
+from email.message import EmailMessage
 from pydantic import EmailStr
-from fastapi_mail import FastMail, MessageSchema, MessageType
+
+import os
+from dotenv import load_dotenv
+load_dotenv()
 
 from app import settings
-from app.config.config_mail import get_mail_config
+from app.utils.templates import render_template
+
 
 class ServiceMail:
-    def __init__(self):
-        self.mail = FastMail(get_mail_config())
 
-    async def send_reset_password(self, email: EmailStr, name: str, token: str):
-        reset_link = f"{settings.FRONT_URL}/reset-password?token={token}"
-        
-        message = MessageSchema(
-            subject="Сброс пароля",
-            recipients=[email],
-            template_body={"name": name, "reset_link": reset_link},
-            subtype=MessageType.html,
+    @staticmethod
+    async def send_mail_async(to_email: EmailStr, subject: str, template_name: str, context: dict):
+        # Рендерим html с подстановкой данных
+        html_content = render_template(template_name, context)
+
+        message = EmailMessage()
+        message["From"] = os.getenv("SMTP_FROM")
+        message["To"] = to_email
+        message["Subject"] = subject
+        message.set_content(html_content, subtype="html")
+
+        await aiosmtplib.send(
+            message,
+            hostname=os.getenv("SMTP_HOST"),
+            port=int(os.getenv("SMTP_PORT")),
+            start_tls=True,
+            username=os.getenv("SMTP_USERNAME"),
+            password=os.getenv("SMTP_PASSWORD"),
         )
-        await self.mail.send_message(message, template_name="reset_password.html")

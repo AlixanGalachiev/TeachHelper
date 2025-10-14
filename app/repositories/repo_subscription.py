@@ -5,7 +5,7 @@ from passlib.hash import bcrypt
 
 from app.models import *
 
-from app.schemas import UserCreate, SubscriptionCreate, SubscriptionRead, SubscriptionUpdate
+from app.schemas import SubscriptionCreate, SubscriptionRead, SubscriptionUpdate
 from app.utils.password import get_password_hash
 from datetime import datetime
 import uuid
