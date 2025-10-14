@@ -27,7 +27,7 @@ class Settings(BaseSettings):
     @property
     def sync_url(self) -> str:
         return (
-            f"postgresql+psycopg2://{self.DATABASE_USER}:{self.DATABASE_PASSWORD}"
+            f"postgresql+psycopg://{self.DATABASE_USER}:{self.DATABASE_PASSWORD}"
             f"@{self.DATABASE_HOST}:{self.DATABASE_PORT}/{self.DATABASE_NAME}"
         )
 
@@ -43,7 +43,7 @@ class Settings(BaseSettings):
     @property
     def test_sync_url(self) -> str:
         return (
-            f"postgresql+psycopg2://{self.DATABASE_USER}:{self.DATABASE_PASSWORD}"
+            f"postgresql+psycopg://{self.DATABASE_USER}:{self.DATABASE_PASSWORD}"
             f"@{self.DATABASE_HOST}:{self.DATABASE_PORT}/{self.TEST_DATABASE_NAME}"
         )
 
