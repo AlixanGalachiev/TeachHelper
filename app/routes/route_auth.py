@@ -3,7 +3,7 @@ from pydantic import EmailStr
 from sqlalchemy.ext.asyncio import AsyncSession
 from fastapi.security import OAuth2PasswordRequestForm
 from app.db import get_async_session
-from app.models.model_user import User
+from app.models.model_users import Users
 from app.schemas.schema_auth import UserRegister, UserRead, UserToken, UserResetPassword
 from app.services.service_user import ServiceUser
 from app.utils.oAuth import get_current_user
@@ -37,10 +37,10 @@ async def forgot_password(email: EmailStr, session: AsyncSession = Depends(get_a
     return await service.send_reset_mail(email)
 
 @router.post("/reset_password")
-async def reset_password(data: UserResetPassword, session: AsyncSession = Depends(get_async_session), user: User = Depends(get_current_user)):
+async def reset_password(data: UserResetPassword, session: AsyncSession = Depends(get_async_session), user: Users = Depends(get_current_user)):
     service = ServiceUser(session)
     return await service.reset_password(data=data, user_data=user)
 
 @router.get("/me", response_model=UserRead)
-async def me(current_user: User = Depends(get_current_user)):
+async def me(current_user: Users = Depends(get_current_user)):
     return UserRead.model_validate(current_user)

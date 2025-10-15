@@ -1,5 +1,5 @@
 from .base import *
-from .model_user import *
+from .model_users import *
 # from .model_task import *
 # from .model_work import *
 # from .model_subscription import *

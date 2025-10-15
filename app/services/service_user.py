@@ -5,7 +5,7 @@ from pydantic import EmailStr
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.config.config_app import settings
-from app.models.model_user import User
+from app.models.model_users import Users
 from app.repositories.repo_user import UserRepo
 from app.schemas.schema_auth import UserRead, UserRegister, UserResetPassword, UserToken
 
@@ -27,7 +27,7 @@ class ServiceUser:
         if await repo.email_exists(user.email):
             raise HTTPException(status.HTTP_409_CONFLICT, "User with this email already exists")
 
-        user_db = User(
+        user_db = Users(
             first_name=user.first_name,
             last_name=user.last_name,
             email=user.email,
@@ -82,7 +82,7 @@ class ServiceUser:
         if not email:
             raise HTTPException(status_code=400, detail="Invalid token")
 
-        user = await self.session.get(User, {"email": email})
+        user = await self.session.get(UserRegister, {"email": email})
         if not user:
             raise HTTPException(status_code=404, detail="User not found")
 
@@ -116,7 +116,7 @@ class ServiceUser:
         if not email:
             raise HTTPException(status_code=400, detail="Invalid token")
 
-        user = await self.session.get(User, {"email": email})
+        user = await self.session.get(UserRegister, {"email": email})
         if not user:
             raise HTTPException(status_code=404, detail="User not found")
         

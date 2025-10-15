@@ -4,7 +4,7 @@ from fastapi.security import OAuth2PasswordRequestForm
 import pytest
 from unittest.mock import AsyncMock, patch, ANY, Mock
 from pydantic import EmailStr
-from app.models.model_user import User
+from app.models.model_users import Users
 from app.schemas.schema_auth import UserRead, UserRegister, UserToken
 from app.services.service_user import ServiceUser
 from app.services.service_mail import ServiceMail
@@ -38,7 +38,7 @@ async def test_register(monkeypatch):
     repo_mock = AsyncMock()
     repo_mock.email_exists = AsyncMock(return_value=False)
     
-    mock_user = User(
+    mock_user = Users(
         id=uuid.uuid4(),
         first_name="Иван",
         last_name="Иванов",
@@ -97,7 +97,7 @@ async def test_login(monkeypatch):
     repo_mock = Mock()
     repo_mock.email_exists = AsyncMock(return_value=True)
     form_data = OAuth2PasswordRequestForm(username="ivan@example.com", password="123456")
-    db_user = User(
+    db_user = Users(
         id=uuid.uuid4(),
         first_name="Иван",
         last_name="Иванов",
@@ -140,7 +140,7 @@ async def test_login_wrong_password(monkeypatch):
     repo_mock = AsyncMock()
     repo_mock.email_exists = AsyncMock(return_value=True)
     form_data = OAuth2PasswordRequestForm(username="ivan@example.com", password="123456")
-    db_user = User(
+    db_user = Users(
         id=uuid.uuid4(),
         first_name="Иван",
         last_name="Иванов",
@@ -168,7 +168,7 @@ async def test_send_reset_mail(send_mail_async_mock, monkeypatch):
     repo_mock = AsyncMock()
     repo_mock.email_exists = AsyncMock(return_value=True)
     email: EmailStr = "ivan@example.com"
-    db_user = User(
+    db_user = Users(
         id=uuid.uuid4(),
         first_name="Иван",
         last_name="Иванов",

@@ -1,6 +1,6 @@
 # tests/test_repo_usersitory.py
 import pytest
-from app.models.model_user import RoleUser
+from app.models.model_users import RoleUser
 from app.repositories.repo_user import UserRepo
 from app.schemas.schema_auth import UserCreate
 from app.utils.password import verify_password
