@@ -10,7 +10,7 @@ from app.utils.password import get_password_hash
 from datetime import datetime
 
 
-class UserRepo:
+class RepoUser:
     def __init__(self, session: AsyncSession):
         self.session = session
   

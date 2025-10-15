@@ -6,7 +6,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.config.config_app import settings
 from app.models.model_users import Users
-from app.repositories.repo_user import UserRepo
+from app.repositories.repo_user import RepoUser
 from app.schemas.schema_auth import UserRead, UserRegister, UserResetPassword, UserToken
 
 from app.utils.oAuth import create_access_token, decode_token
@@ -21,7 +21,7 @@ class ServiceAuth:
 
 
     async def register(self, user: UserRegister):
-        repo = UserRepo(self.session)
+        repo = RepoUser(self.session)
         if await repo.email_exists(user.email):
             raise HTTPException(status.HTTP_409_CONFLICT, "User with this email already exists")
 
@@ -39,9 +39,9 @@ class ServiceAuth:
 
 
     async def login(self, form_data: OAuth2PasswordRequestForm):
-        repo = UserRepo(self.session)
+        repo = RepoUser(self.session)
         if not await repo.email_exists(form_data.username):
-            raise HTTPException(status.HTTP_409_CONFLICT, "User with this email not exists")
+            raise HTTPException(status.HTTP_404_NOT_FOUND, "User with this email not exists")
 
         user = await repo.get_by_email(form_data.username)
         if not verify_password(form_data.password, user.password):
@@ -55,7 +55,7 @@ class ServiceAuth:
 
 
     async def send_email_confirmation_link(self, email: EmailStr):
-        repo = UserRepo(self.session)
+        repo = RepoUser(self.session)
         if not await repo.email_exists(email):
             raise HTTPException(status.HTTP_404_NOT_FOUND, "User with this email not exists")
 
@@ -67,7 +67,7 @@ class ServiceAuth:
         verify_link = f"{settings.FRONT_URL}/confirm_email?token=Bearer {token}"
         await ServiceMail.send_mail_async(email, "Подтверждение почты", "template_verification_code.html", {"verify_link": verify_link})
 
-        return {"message": "Письмо отправленно"}
+        return {"message": "Письмо отправлено"}
 
 
     async def confirm_email(self, token: str):
@@ -75,9 +75,9 @@ class ServiceAuth:
 
         email = payload.get("email")
         if not email:
-            raise HTTPException(status_code=400, detail="Invalid token")
+            raise HTTPException(status.HTTP_400_BAD_REQUEST, detail="Invalid token")
 
-        repo = UserRepo(self.session)
+        repo = RepoUser(self.session)
         user = await repo.get_by_email(email)
         if user is None: 
             raise HTTPException(status.HTTP_404_NOT_FOUND, "User with this email not exists")
@@ -88,7 +88,7 @@ class ServiceAuth:
 
 
     async def forgot_password(self, email: EmailStr):
-        repo = UserRepo(self.session)
+        repo = RepoUser(self.session)
         if not await repo.email_exists(email):
             raise HTTPException(status.HTTP_404_NOT_FOUND, "User with this email not exists")
 
@@ -108,7 +108,7 @@ class ServiceAuth:
         if not email:
             raise HTTPException(status_code=400, detail="Invalid token")
 
-        repo = UserRepo(self.session)
+        repo = RepoUser(self.session)
         user = await repo.get_by_email(email)
 
         if user is None: 
