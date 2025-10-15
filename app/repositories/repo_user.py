@@ -1,4 +1,5 @@
 from typing import Sequence, Optional
+import uuid
 from sqlalchemy import select, update, delete, exists
 from sqlalchemy.ext.asyncio import AsyncSession
 from passlib.hash import bcrypt
@@ -25,7 +26,7 @@ class UserRepo:
         self.session.add(user)
         return user
 
-    async def get(self, user_id: int) -> Optional[Users]:
+    async def get(self, user_id: uuid.UUID) -> Optional[Users]:
         res = await self.session.execute(select(Users).where(Users.id == user_id))
         return res.scalar_one_or_none()
 
@@ -37,13 +38,10 @@ class UserRepo:
         res = await self.session.execute(select(Users).offset(offset).limit(limit))
         return res.scalars().all()
 
-    async def update(self, user_id: int, **fields) -> Optional[Users]:
-        if "password" in fields:
-            fields["password_hash"] = bcrypt.hash(fields.pop("password"))
-        result = await self.session.execute(update(Users).where(Users.id == user_id).values(**fields).returning(Users))
-        return result.scalar_one_or_none()
+    async def update(self, user_id: uuid.UUID, fields: dict) -> Optional[Users]:
+        await self.session.execute(update(Users).where(Users.id == user_id).values(**fields))
 
-    async def delete(self, user_id: int) -> bool:
+    async def delete(self, user_id: uuid.UUID) -> bool:
         await self.session.execute(delete(Users).where(Users.id == user_id))
         return True
 

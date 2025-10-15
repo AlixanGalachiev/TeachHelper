@@ -1,5 +1,5 @@
 from datetime import datetime, timedelta, timezone
-from jose import jwt, JWTError
+from jose import ExpiredSignatureError, jwt, JWTError
 from fastapi import HTTPException, status, Depends
 from fastapi.security import OAuth2PasswordBearer
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -13,11 +13,38 @@ from app.schemas.schema_auth import UserRead
 
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/auth/login")
 
-def create_access_token(data: dict, expires_delta: timedelta | None = None):
+def create_access_token(data: dict, key: str, expires_delta: timedelta | None = None):
     to_encode = data.copy()
     expire = datetime.now(timezone.utc) + (expires_delta or timedelta(minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES))
     to_encode.update({"exp": expire})
-    return jwt.encode(to_encode, settings.SECRET_CONFIRM_KEY, algorithm=settings.ALGORITHM)
+    return jwt.encode(to_encode, key, algorithm=settings.ALGORITHM)
+
+def decode_token(token: str, key: str, algorithms=[settings.ALGORITHM]):
+    if not token.startswith("Bearer "):
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Invalid token format (expected 'Bearer <token>')"
+        )
+
+    jwt_token = token.split("Bearer ")[1]
+
+    try:
+        payload = jwt.decode(token=jwt_token, key=key, algorithms=algorithms)
+        return payload
+
+    except ExpiredSignatureError:
+        # Срок действия токена истёк
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Token has expired"
+        )
+
+    except JWTError:
+        # Любая другая JWT ошибка (подпись неверна, токен повреждён и т.п.)
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Invalid or malformed token"
+        )
 
 async def get_current_user(token: str = Depends(oauth2_scheme), db: AsyncSession = Depends(get_async_session)) -> Users:
     repo = UserRepo(db)
@@ -27,7 +54,7 @@ async def get_current_user(token: str = Depends(oauth2_scheme), db: AsyncSession
         headers={"WWW-Authenticate": "Bearer"},
     )
     try:
-        payload = jwt.decode(token, settings.SECRET_CONFIRM_KEY, algorithms=[settings.ALGORITHM])
+        payload = jwt.decode(token, settings.SECRET, algorithms=[settings.ALGORITHM])
         print(payload)
         email: str = payload.get("email")
         if email is None:

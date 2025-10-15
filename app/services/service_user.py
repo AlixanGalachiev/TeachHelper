@@ -9,7 +9,7 @@ from app.models.model_users import Users
 from app.repositories.repo_user import UserRepo
 from app.schemas.schema_auth import UserRead, UserRegister, UserResetPassword, UserToken
 
-from app.utils.oAuth import create_access_token, get_current_user
+from app.utils.oAuth import create_access_token, decode_token, get_current_user
 from app.utils.password import verify_password, get_password_hash
 from fastapi.security import OAuth2PasswordRequestForm
 from app.services.service_mail import ServiceMail
@@ -51,8 +51,8 @@ class ServiceUser:
 
         if not user.is_verificated:
             raise HTTPException(status.HTTP_403_FORBIDDEN, detail="Please confirm your email first")
-        
-        token = create_access_token({"email": form_data.username})
+
+        token = create_access_token({"email": form_data.username}, settings.SECRET)
         return UserToken(token_type="Bearer", access_token=token)
 
 
@@ -65,26 +65,24 @@ class ServiceUser:
         if user.is_verificated:
             raise HTTPException(status.HTTP_409_CONFLICT, detail="User is already verificated")
 
-        token = create_access_token(email, timedelta(seconds=60))
-        verify_link = f"{settings.FRONT_URL}/confirm_email?token={token}"
+        token = create_access_token({"email": email}, settings.SECRET_CONFIRM_KEY, timedelta(seconds=100))
+        verify_link = f"{settings.FRONT_URL}/confirm_email?token=Bearer {token}"
         await ServiceMail.send_mail_async(email, "Подтверждение почты", "template_verification_code.html", {"verify_link": verify_link})
 
         return {"message": "Письмо отправленно"}
 
 
     async def confirm_email(self, token: str):
-        if not token.startswith("Bearer "):
-            raise HTTPException(status_code=401, detail="Invalid token format")
+        payload = decode_token(token, settings.SECRET_CONFIRM_KEY)
 
-        jwt_token = token.split("Bearer ")[1]
-        payload = jwt.decode(jwt_token, settings.SECRET_CONFIRM_KEY, algorithms=[settings.ALGORITHM])
         email = payload.get("email")
         if not email:
             raise HTTPException(status_code=400, detail="Invalid token")
 
-        user = await self.session.get(UserRegister, {"email": email})
-        if not user:
-            raise HTTPException(status_code=404, detail="User not found")
+        repo = UserRepo(self.session)
+        user = await repo.get_by_email(email)
+        if user is None: 
+            raise HTTPException(status.HTTP_404_NOT_FOUND, "User with this email not exists")
 
         user.is_verificated = True
         await self.session.commit()
@@ -100,26 +98,24 @@ class ServiceUser:
         if not user.is_verificated:
             raise HTTPException(status.HTTP_403_FORBIDDEN, detail="Please confirm your email first")
 
-        token = create_access_token(email, timedelta(seconds=60))
-        reset_link = f"{settings.FRONT_URL}/reset_password?token={token}"
-        await ServiceMail.send_mail_async(email, "Сброс пароля", "template_verification_code.html", {"name": user.first_name, "reset_link": reset_link})
+        token = create_access_token({"email": email}, settings.SECRET_RESET_KEY, timedelta(seconds=60))
+        reset_link = f"{settings.FRONT_URL}/reset_password?token=Bearer {token}"
+        await ServiceMail.send_mail_async(email, "Сброс пароля", "template_reset_password.html", {"name": user.first_name, "reset_link": reset_link})
 
         return {"message": "Письмо отправлено"}
     
     async def reset_password(self, reset_data: UserResetPassword):
-        if not reset_data.token.startswith("Bearer "):
-            raise HTTPException(status_code=401, detail="Invalid token format")
-
-        jwt_token = reset_data.token.split("Bearer ")[1]
-        payload = jwt.decode(jwt_token, settings.SECRET_RESET_KEY, algorithms=[settings.ALGORITHM])
+        payload = decode_token(reset_data.token, settings.SECRET_RESET_KEY)
         email = payload.get("email")
         if not email:
             raise HTTPException(status_code=400, detail="Invalid token")
 
-        user = await self.session.get(UserRegister, {"email": email})
-        if not user:
-            raise HTTPException(status_code=404, detail="User not found")
+        repo = UserRepo(self.session)
+        user = await repo.get_by_email(email)
+
+        if user is None: 
+            raise HTTPException(status.HTTP_404_NOT_FOUND, "User with this email not exists")
         
-        user.password = get_password_hash(reset_data.password)
-        self.session.commit()
+        await repo.update(user.id, {"password": get_password_hash(reset_data.password)})
+        await self.session.commit()
         return {"message": "Пароль обновлён"}

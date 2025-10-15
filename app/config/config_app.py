@@ -15,6 +15,7 @@ class Settings(BaseSettings):
 
 
     # Security / JWT
+    SECRET: str
     SECRET_CONFIRM_KEY: str
     SECRET_RESET_KEY: str
     ALGORITHM: str = "HS256"

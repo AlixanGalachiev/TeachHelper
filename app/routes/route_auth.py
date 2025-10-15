@@ -34,12 +34,12 @@ async def confirm_email(token: str, session: AsyncSession = Depends(get_async_se
 @router.post("/forgot_password")
 async def forgot_password(email: EmailStr, session: AsyncSession = Depends(get_async_session)):
     service = ServiceUser(session)
-    return await service.send_reset_mail(email)
+    return await service.forgot_password(email)
 
 @router.post("/reset_password")
-async def reset_password(data: UserResetPassword, session: AsyncSession = Depends(get_async_session), user: Users = Depends(get_current_user)):
+async def reset_password(reset_data: UserResetPassword, session: AsyncSession = Depends(get_async_session)):
     service = ServiceUser(session)
-    return await service.reset_password(data=data, user_data=user)
+    return await service.reset_password(reset_data=reset_data)
 
 @router.get("/me", response_model=UserRead)
 async def me(current_user: Users = Depends(get_current_user)):

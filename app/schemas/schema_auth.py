@@ -54,6 +54,7 @@ class UserResetPassword(BaseModel):
 class UserRead(UserBase):
     id: uuid.UUID
     role: UserRole
+    is_verificated: bool
     
     model_config = {
         "from_attributes": True 
