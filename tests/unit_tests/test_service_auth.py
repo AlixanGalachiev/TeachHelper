@@ -6,7 +6,7 @@ from unittest.mock import AsyncMock, patch, ANY, Mock
 from pydantic import EmailStr
 from app.models.model_users import Users
 from app.schemas.schema_auth import UserRead, UserRegister, UserToken
-from app.services.service_user import ServiceUser
+from app.services.service_auth import ServiceAuth
 from app.services.service_mail import ServiceMail
 from app.utils import password
 
@@ -18,7 +18,7 @@ load_dotenv()
 @pytest.mark.asyncio
 @patch("app.services.service_user.ServiceMail.send_mail_async", new_callable=AsyncMock)
 async def test_validate_email(mock_service_mail):
-    service = ServiceUser(session=None)
+    service = ServiceAuth(session=None)
     email: EmailStr = "test@example.com"
     
     result = await service.validate_email(email)
@@ -53,7 +53,7 @@ async def test_register(monkeypatch):
 
     monkeypatch.setattr("app.services.service_user.UserRepo", lambda session: repo_mock)
     
-    service = ServiceUser(mock_session)
+    service = ServiceAuth(mock_session)
     user_data = UserRegister(
         first_name="Иван",
         last_name="Иванов",
@@ -77,7 +77,7 @@ async def test_register_email_exists(monkeypatch):
     mock_session = AsyncMock()
     monkeypatch.setattr("app.services.service_user.UserRepo", lambda session: mock_session)
     
-    service = ServiceUser(mock_session)
+    service = ServiceAuth(mock_session)
     user_data = UserRegister(
         first_name="Иван",
         last_name="Иванов",
@@ -115,7 +115,7 @@ async def test_login(monkeypatch):
     monkeypatch.setattr("app.services.service_user.create_access_token", lambda data: "lal")
 
     
-    service = ServiceUser(mock_session)
+    service = ServiceAuth(mock_session)
     result = await service.login(form_data)
     
     assert result == UserToken(token_type="Bearer", access_token='lal')
@@ -129,7 +129,7 @@ async def test_login_email_not_exists(monkeypatch):
     
     
     monkeypatch.setattr("app.services.service_user.UserRepo", lambda session: repo_mock)
-    service = ServiceUser(mock_session)
+    service = ServiceAuth(mock_session)
     with pytest.raises(HTTPException) as exc:
         await service.login(form_data)
     assert exc.value.detail == "User with this email not exists"
@@ -153,7 +153,7 @@ async def test_login_wrong_password(monkeypatch):
     monkeypatch.setattr("app.services.service_user.UserRepo", lambda session: repo_mock)
     
     
-    service = ServiceUser(mock_session)
+    service = ServiceAuth(mock_session)
     with pytest.raises(HTTPException) as exc:
         await service.login(form_data)
 
@@ -182,7 +182,7 @@ async def test_send_reset_mail(send_mail_async_mock, monkeypatch):
 
     
     session_mock = AsyncMock()
-    service = ServiceUser(session_mock)
+    service = ServiceAuth(session_mock)
     result = await service.send_reset_mail(email)
     send_mail_async_mock.assert_awaited_once()
     assert result == {"message": "Письмо отправленно"}
@@ -198,7 +198,7 @@ async def test_send_reset_mail_not_exists(send_mail_async_mock, monkeypatch):
 
     
     session_mock = AsyncMock()
-    service = ServiceUser(session_mock)
+    service = ServiceAuth(session_mock)
     with pytest.raises(HTTPException) as exc:
         await service.send_reset_mail(email)
 

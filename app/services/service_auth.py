@@ -9,14 +9,12 @@ from app.models.model_users import Users
 from app.repositories.repo_user import UserRepo
 from app.schemas.schema_auth import UserRead, UserRegister, UserResetPassword, UserToken
 
-from app.utils.oAuth import create_access_token, decode_token, get_current_user
+from app.utils.oAuth import create_access_token, decode_token
 from app.utils.password import verify_password, get_password_hash
 from fastapi.security import OAuth2PasswordRequestForm
 from app.services.service_mail import ServiceMail
 
-from jose import jwt
-
-class ServiceUser:
+class ServiceAuth:
     def __init__(self, session: AsyncSession):
         self.session = session
         self.mail = ServiceMail()
