@@ -1,21 +1,15 @@
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends
 from pydantic import EmailStr
 from sqlalchemy.ext.asyncio import AsyncSession
 from fastapi.security import OAuth2PasswordRequestForm
 from app.db import get_async_session
 from app.models.model_user import User
-from app.repositories.repo_user import UserRepo
 from app.schemas.schema_auth import UserRegister, UserRead, UserToken, UserResetPassword
 from app.services.service_user import ServiceUser
-from app.utils.oAuth import create_access_token, get_current_user
-from app.utils.password import verify_password
+from app.utils.oAuth import get_current_user
 
 router = APIRouter(prefix="/auth", tags=["Auth"])
 
-@router.post("/validate_email")
-async def validate_email(email: EmailStr, session: AsyncSession = Depends(get_async_session)):
-    service = ServiceUser(session)
-    return await service.validate_email(email)    
 
 @router.post("/register", response_model=UserRead)
 async def register(user: UserRegister, session: AsyncSession = Depends(get_async_session)):
@@ -26,6 +20,16 @@ async def register(user: UserRegister, session: AsyncSession = Depends(get_async
 async def login(form_data: OAuth2PasswordRequestForm = Depends(), session: AsyncSession = Depends(get_async_session)):
     service = ServiceUser(session)
     return await service.login(form_data)
+
+@router.post("/send_email_confirmation_link")
+async def send_email_confirmation_link(email: EmailStr, session: AsyncSession = Depends(get_async_session)):
+    service = ServiceUser(session)
+    return await service.send_email_confirmation_link(email)
+
+@router.post("/confirm_email")
+async def confirm_email(token: str, session: AsyncSession = Depends(get_async_session)):
+    service = ServiceUser(session)
+    return await service.confirm_email(token)   
 
 @router.post("/forgot_password")
 async def forgot_password(email: EmailStr, session: AsyncSession = Depends(get_async_session)):

@@ -1,8 +1,9 @@
 API
 /auth
-    /validate_email
     /register
     /login
+    /send_email_confirmation_link
+    /confirm_email
     /forgot_password
     /reset_password
     /me

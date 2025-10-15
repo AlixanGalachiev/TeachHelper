@@ -49,6 +49,7 @@ class UserLogin(BaseModel):
 
 class UserResetPassword(BaseModel):
     password: str
+    token: str
 
 class UserRead(UserBase):
     id: uuid.UUID
