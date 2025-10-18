@@ -7,3 +7,44 @@ API
     /forgot_password
     /reset_password
     /me
+
+/students
+
+
+
+
+/classrooms
+    POST   /      - класс создаётся(даётся имя)
+    GET    /      - получить все классы(по фильтрам - id учителя,)
+    PATCH {id}/   - обновить имя класса
+    DELETE {id}/  - удалить имя класс
+    GET {id}/     - получить класс с его  по фильтрам(id, name) 
+    - должен вернутся список содержащий 
+        имя ученика
+        количество заданных заданий
+        его средний балл
+        и список работ которые ему задавал(текущий учитель)
+
+/tasks
+    POST   /
+    GET    /
+    PATCH  /
+    DELETE /
+
+    POST   /{id}
+    GET    /{id}
+    PATCH  /{id}
+    DELETE /{id}
+
+/works
+    POST   /
+    GET    /
+    UPDATE /
+    PATCH  /
+    DELETE /
+
+    POST   /{id}
+    GET    /{id}
+    UPDATE /{id}
+    PATCH  /{id}
+    DELETE /{id}

@@ -7,7 +7,7 @@ from pydantic import EmailStr
 from app.models.model_users import Users
 from app.schemas.schema_auth import UserRead, UserRegister, UserToken
 from app.services.service_auth import ServiceAuth
-from app.utils import password
+from app.utils.password import get_password_hash
 
 
 @pytest.fixture(scope="function")
@@ -18,7 +18,7 @@ def user_db_verificated() -> Users:
         first_name="Иван",
         last_name="Иванов",
         email="ivan@example.com",
-        password=password.get_password_hash("123456"),
+        password=get_password_hash("123456"),
         role="teacher",
         is_verificated=True
     )
@@ -31,7 +31,7 @@ def user_db_unverificated() -> Users:
         first_name="Иван",
         last_name="Иванов",
         email="ivan@example.com",
-        password=password.get_password_hash("123456"),
+        password=get_password_hash("123456"),
         role="teacher",
         is_verificated=False
     )
@@ -50,10 +50,6 @@ def user_register() -> UserRegister:
 @pytest.fixture(scope="module")
 def form_data():
     return OAuth2PasswordRequestForm(username="ivan@example.com", password="123456")
-
-@pytest.fixture(scope="module")
-def bearer_token():
-    return 
 
 @pytest.fixture(scope='module')
 def mock_service():

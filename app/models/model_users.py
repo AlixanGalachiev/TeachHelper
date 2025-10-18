@@ -1,5 +1,9 @@
-from sqlalchemy.orm import Mapped, mapped_column
-from sqlalchemy import Boolean, String, Enum
+import uuid
+from sqlalchemy.orm import Mapped, mapped_column, relationship
+from sqlalchemy import Boolean, Column, ForeignKey, String, Enum, Table
+from sqlalchemy.dialects.postgresql import UUID
+
+
 import enum
 
 from .base import Base
@@ -10,6 +14,24 @@ class RoleUser(str, enum.Enum):
     admin   = "admin"
 
 
+teachers_students = Table(
+    "teachers_students",
+    Base.metadata,
+    Column("id", UUID(as_uuid=True), primary_key=True, default=uuid.uuid4),
+    Column("teacher_id", UUID(as_uuid=True), ForeignKey("users.id", ondelete="CASCADE")),
+    Column("student_id", UUID(as_uuid=True), ForeignKey("users.id", ondelete="CASCADE")),
+)
+
+users_classrooms = Table(
+    "users_classrooms",
+    Base.metadata,
+    Column("id", UUID(as_uuid=True), primary_key=True, default=uuid.uuid4),
+    Column("user_id", UUID(as_uuid=True), ForeignKey("users.id", ondelete="CASCADE")),
+    Column("classroom_id", UUID(as_uuid=True), ForeignKey("classrooms.id", ondelete="CASCADE")),
+    
+)
+
+
 class Users(Base):
     first_name: Mapped[str] = mapped_column(String(50), nullable=False)
     last_name: Mapped[str] = mapped_column(String(50), nullable=False)
@@ -17,4 +39,23 @@ class Users(Base):
     password: Mapped[str] = mapped_column(String(255), nullable=False)
     role: Mapped[RoleUser] = mapped_column(Enum(RoleUser), nullable=False)
     is_verificated: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
-  
+
+    teachers: Mapped[list["Users"]] = relationship(
+        "Users",
+        secondary=teachers_students,
+        primaryjoin=lambda: Users.id == teachers_students.c.student_id,
+        secondaryjoin=lambda: Users.id == teachers_students.c.teacher_id,
+        back_populates="students",
+    )
+
+    students: Mapped[list["Users"]] = relationship(
+        "Users",
+        secondary=teachers_students,
+        primaryjoin=lambda: Users.id == teachers_students.c.teacher_id,
+        secondaryjoin=lambda: Users.id == teachers_students.c.student_id,
+        back_populates="teachers",
+    )
+
+    classrooms: Mapped[list["Classrooms"]] = relationship("Classrooms", backref="users", secondary="users_classrooms")
+
+

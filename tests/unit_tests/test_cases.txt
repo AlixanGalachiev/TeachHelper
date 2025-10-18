@@ -1,31 +1,47 @@
 service_auth
     register
-        user_exists  HTTPException
         success  UserRead
+        user_exists  HTTPException
     
     login
-        user_not_exists пользовтель с указанной почтой не существует HTTPException(status.HTTP_404_
-        wrong_password неверный пароль HTTPException(status.HTTP_401
-        unverifed_user пользовтель не подтвердил email HTTPException(status.HTTP_403
-        success успешный вход UserToken(token_type="Bearer",  access_token=token)
+        success 
+        user_not_exists  HTTPException
+        wrong_password  HTTPException
+        unverifed_user  HTTPException
 
     send_email_confirmation_link
-        success успешная отправка письма
-        user_not_exists пользовтель с указанной почтой не существует HTTPException(status.HTTP_404_
-        user_verified пользовтель уже подтвердил email HTTPException(status.HTTP_409
+        success 
+        user_not_exists HTTPException
+        user_verified HTTPException
 
     confirm_email
-        success пользовтель подтвердил почту
-        invalid_token неверный токен  HTTPException(status.HTTP_400
-        user_not_exists пользовтель с указанной почтой не существует HTTPException(status.HTTP_404
+        success
+        invalid_token HTTPException
+        user_not_exists HTTPException
 
     forgot_password
-        success письмо с запросом отправлено
-        user_not_exists пользовтель с указанной почтой не существует HTTPException(status.HTTP_404
-        user_unverified пользовтель не подтвердил email HTTPException(status.HTTP_403
+        success
+        user_not_exists HTTPException
+        user_unverified HTTPException
 
     reset_password
-        success пользовтель сменил пароль
-        invalid_token неверный токен  HTTPException(status.HTTP_400
-        user_not_exists пользовтель с указанной почтой не существует HTTPException(status.HTTP_404
+        success
+        invalid_token HTTPException
+        user_not_exists HTTPException
 
+
+service_classroom
+    create
+        success
+        classroom_name_exists
+
+    get_all
+        success
+    get
+        success
+    update
+        success
+        classroom_not_exists
+    delete
+        success
+        classroom_not_exists
