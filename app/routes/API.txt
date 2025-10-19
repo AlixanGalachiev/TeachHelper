@@ -8,7 +8,19 @@ API
     /reset_password
     /me
 
-/students
+teacher 
+    /students
+        GET    /invite_link
+        GET    /
+        GET    /{id}
+        POST   /{id}
+        UPDATE /{id}
+        DELETE /{id}
+
+students
+    /teacher
+        POST /add ?teacher_id student_id
+
 
 
 
