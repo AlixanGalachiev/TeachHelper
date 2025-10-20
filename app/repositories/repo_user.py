@@ -1,13 +1,9 @@
 from typing import Sequence, Optional
 import uuid
-from sqlalchemy import select, update, delete, exists
+from sqlalchemy import select, update, delete
 from sqlalchemy.ext.asyncio import AsyncSession
-from passlib.hash import bcrypt
 
-from app.models.model_users import RoleUser, Users
-from app.schemas.schema_auth import UserRegister
-from app.utils.password import get_password_hash
-from datetime import datetime
+from app.models.model_users import  Users
 
 
 class RepoUser:

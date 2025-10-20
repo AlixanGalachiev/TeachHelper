@@ -1,8 +1,7 @@
 import uuid
-from sqlalchemy import func, select
+from sqlalchemy import func, select, update, delete
 from sqlalchemy.ext.asyncio import AsyncSession
-from app.models.model_submissions import Submissions
-from app.models.model_tasks import Tasks
+from app.models.model_tasks import Submissions, Tasks
 
 
 from app.models.model_users import RoleUser, Users, teachers_students
@@ -60,4 +59,56 @@ class RepoStudents:
             "agg_data": agg_data,
             "works_data": works_data,
         }
- 
+
+
+
+    async def user_exists_in_class(self, teacher_id: uuid.UUID, student_id: uuid.UUID, class_id: uuid.UUID):
+        stmt = (
+            select(func.count())
+            .select_from(teachers_students)
+            .where(teachers_students.c.teacher_id == teacher_id)
+            .where(teachers_students.c.student_id == student_id)
+            .where(teachers_students.c.class_id == class_id)
+        )
+        result = await self.session.execute(stmt)
+        return result.scalar() > 0
+
+
+    async def exists(self, teacher_id: uuid.UUID, student_id: uuid.UUID):
+        stmt = (
+            select(func.count())
+            .select_from(teachers_students)
+            .where(teachers_students.c.teacher_id == teacher_id)
+            .where(teachers_students.c.student_id == student_id)
+        )
+        result = await self.session.execute(stmt)
+        return result.scalar() > 0
+
+
+    async def move_to_class(self, teacher_id: uuid.UUID, student_id: uuid.UUID, class_id: uuid.UUID):
+        stmt = (
+            update(teachers_students)
+            .where(teachers_students.c.teacher_id == teacher_id)
+            .where(teachers_students.c.student_id == student_id)
+            .values(class_id = class_id)
+        )
+        await self.sesssion.execute(stmt)
+
+    async def remove_from_class(self, teacher_id: uuid.UUID, student_id: uuid.UUID, class_id: uuid.UUID):
+        stmt = (
+            update(teachers_students)
+            .where(teachers_students.c.teacher_id == teacher_id)
+            .where(teachers_students.c.student_id == student_id)
+            .values(class_id == None)
+        )
+        await self.sesssion.execute(stmt)
+
+
+    async def delete(self, teacher_id: uuid.UUID, student_id: uuid.UUID):
+        stmt = (
+            delete(teachers_students)
+            .where(teachers_students.c.teacher_id == teacher_id)
+            .where(teachers_students.c.student_id == student_id)
+        )
+        await self.session.execute(stmt)
+        
