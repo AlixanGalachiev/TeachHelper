@@ -18,7 +18,10 @@ class ServiceClassroom:
             raise HTTPException(status_code=409, detail="Class with this name already exists")
 
         user_repo = RepoTeacher(self.session)
-        classroom = Classrooms(name=name)
+        classroom = Classrooms(
+            name=name,
+            teacher_id=teacher.id
+            )
         
         self.session.add(classroom)
         await self.session.flush([classroom])

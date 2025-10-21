@@ -6,7 +6,7 @@ from sqlalchemy import func, select
 from sqlalchemy.orm import selectinload, load_only
 
 from app.models.model_classroom import Classrooms
-from app.models.model_users import users_classrooms
+from app.models.model_users import Users, users_classrooms, teachers_students
 
 
 class RepoClassroom():
@@ -32,14 +32,19 @@ class RepoClassroom():
     
     async def get_teacher_classrooms(self, teacher_id: uuid.UUID):
         stmt = (
-            select(Classrooms)
-            .where(Classrooms.teacher_id == teacher_id)
-            .options( 
-                load_only(Classrooms.id, Classrooms.name)
+            select(
+                Classrooms.id.label("classroom_id"),
+                Classrooms.name.label("classroom_name"),
+                Users.id.label("student_id"),
+                func.concat(Users.first_name, " ", Users.last_name).label("student_name")
             )
+            .outerjoin(teachers_students, teachers_students.c.classroom_id == Classrooms.id)
+            .outerjoin(Users, Users.id == teachers_students.c.student_id)
+            .where(Classrooms.teacher_id == teacher_id)
+            .order_by(Classrooms.id)
         )
-        result = self.session.execute(stmt)
-        return result.scalars().all()
+        result = await self.session.execute(stmt)
+        return result.mappings().all()
         
 
     # async def get_students(self, id: uuid.UUID):

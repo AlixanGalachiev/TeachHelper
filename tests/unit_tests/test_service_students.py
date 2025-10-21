@@ -16,7 +16,7 @@ def student_id():
     return uuid.uuid4()
 
 @pytest.fixture(scope='function')
-def class_id():
+def classroom_id():
     return uuid.uuid4()
 
 @pytest.fixture(scope='module')
@@ -27,56 +27,56 @@ def mock_service_students():
     return ServiceStudents(session=mock_session)
 
 @pytest.mark.asyncio
-async def test_move_to_class_student_not_exists(mock_service_students, teacher_user, student_id, class_id, monkeypatch):
+async def test_move_to_class_student_not_exists(mock_service_students, teacher_user, student_id, classroom_id, monkeypatch):
     monkeypatch.setattr("app.services.teacher.service_students.RepoStudents.exists", AsyncMock(return_value=False))
     with pytest.raises(HTTPException) as exc:
-        await mock_service_students.move_to_class(student_id, class_id, teacher_user)
+        await mock_service_students.move_to_class(student_id, classroom_id, teacher_user)
     assert exc.value.status_code == status.HTTP_404_NOT_FOUND
     assert exc.value.detail == "Студент не найден"
 
 @pytest.mark.asyncio
-async def test_move_to_class_student_already_in_class(mock_service_students, teacher_user, student_id, class_id, monkeypatch):
+async def test_move_to_class_student_already_in_class(mock_service_students, teacher_user, student_id, classroom_id, monkeypatch):
     monkeypatch.setattr("app.services.teacher.service_students.RepoStudents.exists", AsyncMock(return_value=True))
     monkeypatch.setattr("app.services.teacher.service_students.RepoStudents.user_exists_in_class", AsyncMock(return_value=True))
     with pytest.raises(HTTPException) as exc:
-        await mock_service_students.move_to_class(student_id, class_id, teacher_user)
+        await mock_service_students.move_to_class(student_id, classroom_id, teacher_user)
     assert exc.value.status_code == status.HTTP_400_BAD_REQUEST
     assert exc.value.detail == "Студент уже находится в этом классе"
 
 @pytest.mark.asyncio
-async def test_move_to_class_success(mock_service_students, teacher_user, student_id, class_id, monkeypatch):
+async def test_move_to_class_success(mock_service_students, teacher_user, student_id, classroom_id, monkeypatch):
     monkeypatch.setattr("app.services.teacher.service_students.RepoStudents.exists", AsyncMock(return_value=True))
     monkeypatch.setattr("app.services.teacher.service_students.RepoStudents.user_exists_in_class", AsyncMock(return_value=False))
     monkeypatch.setattr("app.services.teacher.service_students.RepoStudents.move_to_class", AsyncMock(return_value=None))
 
-    result = await mock_service_students.move_to_class(student_id, class_id, teacher_user)
+    result = await mock_service_students.move_to_class(student_id, classroom_id, teacher_user)
     assert isinstance(result, JSONResponse)
     assert result.status_code == status.HTTP_200_OK
 
 @pytest.mark.asyncio
-async def test_remove_from_class_student_not_exists(mock_service_students, teacher_user, student_id, class_id, monkeypatch):
+async def test_remove_from_class_student_not_exists(mock_service_students, teacher_user, student_id, classroom_id, monkeypatch):
     monkeypatch.setattr("app.services.teacher.service_students.RepoStudents.exists", AsyncMock(return_value=False))
     with pytest.raises(HTTPException) as exc:
-        await mock_service_students.remove_from_class(student_id, class_id, teacher_user)
+        await mock_service_students.remove_from_class(student_id, classroom_id, teacher_user)
     assert exc.value.status_code == status.HTTP_404_NOT_FOUND
     assert exc.value.detail == "Студент не найден"
 
 @pytest.mark.asyncio
-async def test_remove_from_class_student_not_in_class(mock_service_students, teacher_user, student_id, class_id, monkeypatch):
+async def test_remove_from_class_student_not_in_class(mock_service_students, teacher_user, student_id, classroom_id, monkeypatch):
     monkeypatch.setattr("app.services.teacher.service_students.RepoStudents.exists", AsyncMock(return_value=True))
     monkeypatch.setattr("app.services.teacher.service_students.RepoStudents.user_exists_in_class", AsyncMock(return_value=False))
     with pytest.raises(HTTPException) as exc:
-        await mock_service_students.remove_from_class(student_id, class_id, teacher_user)
+        await mock_service_students.remove_from_class(student_id, classroom_id, teacher_user)
     assert exc.value.status_code == status.HTTP_404_NOT_FOUND
     assert exc.value.detail == "Студент не состоит в этом классе"
 
 @pytest.mark.asyncio
-async def test_remove_from_class_success(mock_service_students, teacher_user, student_id, class_id, monkeypatch):
+async def test_remove_from_class_success(mock_service_students, teacher_user, student_id, classroom_id, monkeypatch):
     monkeypatch.setattr("app.services.teacher.service_students.RepoStudents.exists", AsyncMock(return_value=True))
     monkeypatch.setattr("app.services.teacher.service_students.RepoStudents.user_exists_in_class", AsyncMock(return_value=True))
     monkeypatch.setattr("app.services.teacher.service_students.RepoStudents.remove_from_class", AsyncMock(return_value=None))
 
-    result = await mock_service_students.remove_from_class(student_id, class_id, teacher_user)
+    result = await mock_service_students.remove_from_class(student_id, classroom_id, teacher_user)
     assert isinstance(result, JSONResponse)
     assert result.status_code == status.HTTP_200_OK
 

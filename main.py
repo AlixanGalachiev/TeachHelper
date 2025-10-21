@@ -5,6 +5,8 @@ from fastapi.staticfiles import StaticFiles
 
 from app.routes.route_auth import router as auth_router
 from app.routes.route_classroom import router as classroom_router
+from app.routes.route_students import router as teacher_students_router
+from app.routes.route_students import router2 as student_teachers_router
 
 
 def create_app() -> FastAPI:
@@ -22,6 +24,8 @@ def create_app() -> FastAPI:
     # Роутеры
     app.include_router(auth_router)
     app.include_router(classroom_router)
+    app.include_router(teacher_students_router)
+    app.include_router(student_teachers_router)
 
 
     return app

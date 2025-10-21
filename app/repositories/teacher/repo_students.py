@@ -1,5 +1,5 @@
 import uuid
-from sqlalchemy import func, select, update, delete
+from sqlalchemy import func, insert, select, update, delete
 from sqlalchemy.ext.asyncio import AsyncSession
 from app.models.model_tasks import Submissions, Tasks
 
@@ -15,15 +15,15 @@ class RepoStudents:
             select(
                 Users.id,
                 func.concat(Users.first_name, " ", Users.last_name).label("name"),
-                teachers_students.c.classroom_id
             ).select_from(Users)
             .where(Users.role == RoleUser.student)
-            .join(teachers_students, Users.id == teachers_students.c.classroom_id)
+            .join(teachers_students, Users.id == teachers_students.c.student_id)
             .where(teachers_students.c.teacher_id == teacher.id)
+            .where(teachers_students.c.classroom_id == None)
         )
         
-        result = self.session.execute(stmt)
-        return result.all()
+        result = await self.session.execute(stmt)
+        return result.mappings().all()
 
 
     async def get_performans_data(self, student_id: uuid.UUID):
@@ -35,26 +35,26 @@ class RepoStudents:
                 func.avg(Submissions.total_score).filter(Submissions.status == "verificated").label("avg_score"),
             )
             .where(Users.id == student_id)
-            .join(Submissions, Users.id == Submissions.user_id)
+            .outerjoin(Submissions, Users.id == Submissions.student_id)
             .group_by(Users.id, Users.first_name, Users.last_name)
         )
         agg_result = await self.session.execute(agg_stmt)
-        agg_data = agg_result.all()
+        agg_data = agg_result.mappings().all()
 
         works_stmt = (
             select(
                 Submissions.id.label("submission_id"),
-                Submissions.user_id.label('student_id'),
+                Submissions.student_id.label('student_id'),
                 Submissions.status,
                 Submissions.total_score,
                 Tasks.title.label("task_title"),
                 Tasks.max_score
             )
             .join(Tasks, Submissions.task_id == Tasks.id)
-            .where(Submissions.user_id == student_id)
+            .where(Submissions.student_id == student_id)
         )
         works_result = await self.session.execute(works_stmt)
-        works_data = works_result.all()
+        works_data = works_result.mappings().all()
         return {
             "agg_data": agg_data,
             "works_data": works_data,
@@ -62,13 +62,13 @@ class RepoStudents:
 
 
 
-    async def user_exists_in_class(self, teacher_id: uuid.UUID, student_id: uuid.UUID, class_id: uuid.UUID):
+    async def user_exists_in_class(self, teacher_id: uuid.UUID, student_id: uuid.UUID, classroom_id: uuid.UUID):
         stmt = (
             select(func.count())
             .select_from(teachers_students)
             .where(teachers_students.c.teacher_id == teacher_id)
             .where(teachers_students.c.student_id == student_id)
-            .where(teachers_students.c.class_id == class_id)
+            .where(teachers_students.c.classroom_id == classroom_id)
         )
         result = await self.session.execute(stmt)
         return result.scalar() > 0
@@ -85,23 +85,23 @@ class RepoStudents:
         return result.scalar() > 0
 
 
-    async def move_to_class(self, teacher_id: uuid.UUID, student_id: uuid.UUID, class_id: uuid.UUID):
+    async def move_to_class(self, teacher_id: uuid.UUID, student_id: uuid.UUID, classroom_id: uuid.UUID):
         stmt = (
             update(teachers_students)
             .where(teachers_students.c.teacher_id == teacher_id)
             .where(teachers_students.c.student_id == student_id)
-            .values(class_id = class_id)
+            .values(classroom_id = classroom_id)
         )
-        await self.sesssion.execute(stmt)
+        await self.session.execute(stmt)
 
-    async def remove_from_class(self, teacher_id: uuid.UUID, student_id: uuid.UUID, class_id: uuid.UUID):
+    async def remove_from_class(self, teacher_id: uuid.UUID, student_id: uuid.UUID):
         stmt = (
             update(teachers_students)
             .where(teachers_students.c.teacher_id == teacher_id)
             .where(teachers_students.c.student_id == student_id)
-            .values(class_id == None)
+            .values(classroom_id = None)
         )
-        await self.sesssion.execute(stmt)
+        await self.session.execute(stmt)
 
 
     async def delete(self, teacher_id: uuid.UUID, student_id: uuid.UUID):
@@ -109,6 +109,13 @@ class RepoStudents:
             delete(teachers_students)
             .where(teachers_students.c.teacher_id == teacher_id)
             .where(teachers_students.c.student_id == student_id)
+        )
+        await self.session.execute(stmt)
+
+    async def add_teacher(self, teacher_id: uuid.UUID, student_id: uuid.UUID):
+        stmt = (
+            insert(teachers_students)
+            .values(teacher_id=teacher_id, student_id=student_id)
         )
         await self.session.execute(stmt)
         

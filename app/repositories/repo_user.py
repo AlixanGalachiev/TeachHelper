@@ -14,7 +14,6 @@ class RepoUser:
         stmt = select(Users).where(Users.email == email)
         response = await self.session.execute(stmt)
         result = response.scalar_one_or_none()
-        print(result)
         return result is not None
         
 
