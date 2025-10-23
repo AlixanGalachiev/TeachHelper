@@ -1,3 +1,4 @@
+import uuid
 from fastapi import APIRouter, Depends
 from pydantic import EmailStr
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -44,3 +45,8 @@ async def reset_password(reset_data: UserResetPassword, session: AsyncSession = 
 @router.get("/me", response_model=UserRead)
 async def me(current_user: Users = Depends(get_current_user)):
     return UserRead.model_validate(current_user)
+
+@router.delete("/{id}")
+async def delete(id: uuid.UUID, email: EmailStr, session: AsyncSession = Depends(get_async_session), current_user: Users = Depends(get_current_user)):
+    service = ServiceAuth(session)
+    return await service.delete(email, id)

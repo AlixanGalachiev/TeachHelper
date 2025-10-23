@@ -1,6 +1,8 @@
 from datetime import timedelta
 from random import randint
+import uuid
 from fastapi import HTTPException, status
+from fastapi.responses import JSONResponse
 from pydantic import EmailStr
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -117,3 +119,20 @@ class ServiceAuth:
         await repo.update(user.id, {"password": get_password_hash(reset_data.password)})
         await self.session.commit()
         return {"message": "Пароль обновлён"}
+
+
+    async def delete(self, email: EmailStr, id: uuid.UUID):
+        user_db = await self.session.get(Users, id)
+
+        if email != user_db.email:
+            raise HTTPException(status.HTTP_400_BAD_REQUEST, "Input right account email for deleting")
+        
+        if user_db is None:
+            raise HTTPException(status.HTTP_404_NOT_FOUND, detail="User not found")
+        
+        await self.session.delete(user_db)
+        await self.session.commit()
+        return JSONResponse(
+            content={"status": "ok"},
+            status_code=status.HTTP_200_OK
+        )

@@ -59,13 +59,3 @@ class Settings(BaseSettings):
 
 settings = Settings()
 
-
-# --- Connection helpers ---
-from sqlalchemy import create_engine
-from sqlalchemy.ext.asyncio import create_async_engine
-
-def get_sync_engine():
-    return create_engine(settings.sync_url, future=True)
-
-def get_async_engine():
-    return create_async_engine(settings.async_url, future=True)
