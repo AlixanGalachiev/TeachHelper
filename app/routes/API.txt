@@ -48,6 +48,10 @@ students
     PATCH  /{id}
     DELETE /{id}
 
+Работы создаються учителем и учеником,
+    Учитель создаёт задание, выбирает учеников, и задаёт задание(работы создаются)
+    Ученик может просто создать работу и отправить её учителю.
+
 /works
     POST   /
     GET    /
@@ -58,5 +62,12 @@ students
     POST   /{id}
     GET    /{id}
     UPDATE /{id}
+    PATCH  /{id}
+    DELETE /{id}
+
+/subjects
+    POST   /
+    GET    /
+    GET    /{id}
     PATCH  /{id}
     DELETE /{id}
