@@ -9,7 +9,7 @@ from sqlalchemy.orm import Mapped, mapped_column, relationship
 class Tasks(Base):
     subject_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), ForeignKey("subjects.id", ondelete="CASCADE"), nullable=False)
     teacher_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), ForeignKey("users.id", ondelete="CASCADE"), nullable=False)
-    title: Mapped[str] = mapped_column(String(), nullable=False)
+    name: Mapped[str] = mapped_column(String(), nullable=False)
     description: Mapped[str] = mapped_column(String())
     deadline: Mapped[datetime] = mapped_column(DateTime, nullable=True)
     max_score: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
@@ -25,7 +25,7 @@ class Tasks(Base):
 
 class Exercises(Base):
     task_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), ForeignKey("tasks.id", ondelete="CASCADE"), nullable=False)
-    title: Mapped[str] = mapped_column(String(), nullable=False)
+    name: Mapped[str] = mapped_column(String(), nullable=False)
     description: Mapped[str] = mapped_column(String())
     max_score: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
     order_index: Mapped[int] = mapped_column(Integer, nullable=False)
@@ -46,7 +46,7 @@ class Answers(Base):
 class ErrorType(Base):
     __tablename__ = "error_types"
     subject_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), ForeignKey("submissions.id", ondelete="CASCADE"), nullable=False)
-    title: Mapped[str] = mapped_column(String, nullable=False)
+    name: Mapped[str] = mapped_column(String, nullable=False)
 
 class Errors(Base):
     answer_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), ForeignKey("answers.id", ondelete="CASCADE"), nullable=False)
@@ -54,7 +54,7 @@ class Errors(Base):
     comment: Mapped[str] = mapped_column(String)
 
 class Subjects(Base):
-    title: Mapped[str] = mapped_column(String, nullable=False)
+    name: Mapped[str] = mapped_column(String, nullable=False)
 
 
 
