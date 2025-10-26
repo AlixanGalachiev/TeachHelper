@@ -15,11 +15,11 @@ class RepoStudents:
             select(
                 Users.id,
                 func.concat(Users.first_name, " ", Users.last_name).label("name"),
+                teachers_students.c.classroom_id
             ).select_from(Users)
             .where(Users.role == RoleUser.student)
             .join(teachers_students, Users.id == teachers_students.c.student_id)
             .where(teachers_students.c.teacher_id == teacher.id)
-            .where(teachers_students.c.classroom_id == None)
         )
         
         result = await self.session.execute(stmt)
@@ -39,7 +39,7 @@ class RepoStudents:
             .group_by(Users.id, Users.first_name, Users.last_name)
         )
         agg_result = await self.session.execute(agg_stmt)
-        agg_data = agg_result.mappings().all()
+        agg_data = agg_result.mappings().first()
 
         works_stmt = (
             select(
@@ -55,9 +55,10 @@ class RepoStudents:
         )
         works_result = await self.session.execute(works_stmt)
         works_data = works_result.mappings().all()
+
         return {
-            "agg_data": agg_data,
-            "works_data": works_data,
+            **agg_data,
+            "works": works_data
         }
 
 

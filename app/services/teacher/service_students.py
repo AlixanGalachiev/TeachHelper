@@ -9,7 +9,10 @@ from app.repositories.repo_user import RepoUser
 from app.repositories.teacher.repo_students import RepoStudents
 
 from app.schemas.schema_auth import UserRole
+from app.exceptions.exceptions import ErrorRolePermissionDenied
 from app.utils.logger import logger
+
+
 
 
 class ServiceStudents:
@@ -17,83 +20,57 @@ class ServiceStudents:
         self.session = session
 
 
-    async def get_all(self, teacher: Users):
+    async def get_all(self, user: Users):
+        if user.role != UserRole.teacher:
+            raise ErrorRolePermissionDenied(UserRole.teacher)
+
         students_repo = RepoStudents(self.session)
-        students = await students_repo.get_all(teacher)
+        students = await students_repo.get_all(user)
 
         classrooms_repo = RepoClassroom(self.session)
-        classrooms_response = await classrooms_repo.get_teacher_classrooms(teacher.id)
-
-        classrooms = {}
-        for classroom in classrooms_response:
-            cid = classroom["classroom_id"]
-            if cid not in classrooms:
-                classrooms[cid] = {
-                    "id": cid,
-                    "name": classroom["classroom_name"],
-                    "students": []
-                }
-            if classroom["student_id"] != None: 
-                classrooms[cid]["students"].append({
-                    "id": classroom["student_id"],
-                    "name": classroom["student_name"]
-                })
-
+        classrooms = await classrooms_repo.get_teacher_classrooms(user.id)
 
         return {
            "students": students,
-           "classrooms": list(classrooms.values())
+           "classrooms": classrooms
         }
 
 
-    async def get_performans_data(self, student_id: uuid.UUID, teacher: Users):
+    async def get_performans_data(self, student_id: uuid.UUID, user: Users):
+        if user.role != UserRole.teacher:
+            raise ErrorRolePermissionDenied(UserRole.teacher)
+
         repo = RepoStudents(self.session)
-        if not await repo.exists(teacher.id, student_id):
+        if not await repo.exists(user.id, student_id):
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
                 detail="Студент не найден"
             )
-        results = await repo.get_performans_data(student_id)
+        return await repo.get_performans_data(student_id)
         
-        students = {}
-        for s in results["agg_data"]:
-            student_id = s["student_id"]
-            students[student_id] = dict(s)
-            students[student_id]["works"] = []
-
-
-        for row in results["works_data"]:
-            student_id = row["student_id"]
-            if student_id in students:
-                students[student_id]["works"].append({
-                    "submission_id": row["submission_id"],
-                    "status": row["status"],
-                    "total_score": row["total_score"],
-                    "task_title": row["task_title"],
-                    "max_score": row["max_score"]
-                })
-
-        return list(students.values())
 
     async def move_to_class(
         self,
         student_id: uuid.UUID,
         classroom_id: uuid.UUID,
-        teacher: Users
+        user: Users
     ):
         try:
+            if user.role != UserRole.teacher:
+                raise ErrorRolePermissionDenied(UserRole.teacher)
+            
             repo = RepoStudents(self.session)
-            if not await repo.exists(teacher.id, student_id):
+            if not await repo.exists(user.id, student_id):
                 raise HTTPException(
                     status_code=status.HTTP_404_NOT_FOUND,
                     detail="Студент не найден"
                 )
-            if await repo.user_exists_in_class(teacher.id, student_id, classroom_id):
+            if await repo.user_exists_in_class(user.id, student_id, classroom_id):
                 raise HTTPException(
                     status_code=status.HTTP_400_BAD_REQUEST,
                     detail="Студент уже находится в этом классе"
                 )
-            await repo.move_to_class(teacher.id, student_id, classroom_id)
+            await repo.move_to_class(user.id, student_id, classroom_id)
             await self.session.commit()
             return JSONResponse(content={"status": "ok"}, status_code=status.HTTP_200_OK)
         except HTTPException:
@@ -106,21 +83,24 @@ class ServiceStudents:
         self,
         student_id: uuid.UUID,
         classroom_id: uuid.UUID,
-        teacher: Users
+        user: Users
     ):
         repo = RepoStudents(self.session)
         try:
-            if not await repo.exists(teacher.id, student_id):
+            if user.role != UserRole.teacher:
+                raise ErrorRolePermissionDenied(UserRole.teacher)
+            
+            if not await repo.exists(user.id, student_id):
                 raise HTTPException(
                     status_code=status.HTTP_404_NOT_FOUND,
                     detail="Студент не найден"
                 )
-            if not await repo.user_exists_in_class(teacher.id, student_id, classroom_id):
+            if not await repo.user_exists_in_class(user.id, student_id, classroom_id):
                 raise HTTPException(
                     status_code=status.HTTP_404_NOT_FOUND,
                     detail="Студент не состоит в этом классе"
                 )
-            await repo.remove_from_class(teacher.id, student_id, )
+            await repo.remove_from_class(user.id, student_id, )
             await self.session.commit()
             return JSONResponse(content={"status": "ok"}, status_code=status.HTTP_200_OK)
         except HTTPException:
@@ -132,16 +112,19 @@ class ServiceStudents:
     async def delete(
         self,
         student_id: uuid.UUID,
-        teacher: Users
+        user: Users
     ):
-        repo = RepoStudents(self.session)
         try:
-            if not await repo.exists(teacher.id, student_id):
+            if user.role != UserRole.teacher:
+                raise ErrorRolePermissionDenied(UserRole.teacher)
+            
+            repo = RepoStudents(self.session)
+            if not await repo.exists(user.id, student_id):
                 raise HTTPException(
                     status_code=status.HTTP_404_NOT_FOUND,
                     detail="Студент не найден"
                 )
-            await repo.delete(teacher_id=teacher.id, student_id=student_id)
+            await repo.delete(teacher_id=user.id, student_id=student_id)
             await self.session.commit()
             return JSONResponse(content={"status": "ok"}, status_code=status.HTTP_200_OK)
         except HTTPException:
@@ -152,10 +135,10 @@ class ServiceStudents:
 
     async def add_teacher(self, teacher_id: uuid.UUID, student: Users):
         if student.role != UserRole.student:
-            raise HTTPException(status.HTTP_423_LOCKED, "User is not a student")
+            raise ErrorRolePermissionDenied(UserRole.student)
 
         repo_user = RepoUser(self.session)
-        if repo_user.get(teacher_id) is  None:
+        if await repo_user.get(teacher_id) is  None:
             raise HTTPException(status.HTTP_404_NOT_FOUND, "Teacher is not exists")
 
         repo = RepoStudents(self.session)

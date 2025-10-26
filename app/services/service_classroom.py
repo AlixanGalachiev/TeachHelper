@@ -74,3 +74,34 @@ class ServiceClassroom:
     
         
         
+    # async def get_performans_data(self, student_id: uuid.UUID, user: Users):
+    #     if user.role != UserRole.teacher:
+    #         raise ErrorRolePermissionDenied(UserRole.teacher)
+
+    #     repo = RepoStudents(self.session)
+    #     if not await repo.exists(user.id, student_id):
+    #         raise HTTPException(
+    #             status_code=status.HTTP_404_NOT_FOUND,
+    #             detail="Студент не найден"
+    #         )
+    #     results = await repo.get_performans_data(student_id)
+        
+    #     students = {}
+    #     for s in results["agg_data"]:
+    #         student_id = s["student_id"]
+    #         students[student_id] = dict(s)
+    #         students[student_id]["works"] = []
+
+
+    #     for row in results["works_data"]:
+    #         student_id = row["student_id"]
+    #         if student_id in students:
+    #             students[student_id]["works"].append({
+    #                 "submission_id": row["submission_id"],
+    #                 "status": row["status"],
+    #                 "total_score": row["total_score"],
+    #                 "task_title": row["task_title"],
+    #                 "max_score": row["max_score"]
+    #             })
+
+    #     return students.values()

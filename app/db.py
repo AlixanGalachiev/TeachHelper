@@ -1,11 +1,10 @@
 from app.config.config_app import settings
 from contextlib import contextmanager
-from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 from sqlalchemy.orm import sessionmaker
 
 
 from sqlalchemy import create_engine
-from sqlalchemy.ext.asyncio import create_async_engine
+from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession, async_sessionmaker
 
 
 engine = create_engine(settings.sync_url, future=True)

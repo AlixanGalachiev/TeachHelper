@@ -12,7 +12,7 @@ from app.utils.oAuth import get_current_user
 
 router = APIRouter(prefix="/classrooms", tags=["Classroom"])
 
-@router.post('/')
+@router.post("")
 async def create_classroom(
     name: str,
     session: AsyncSession = Depends(get_async_session),
@@ -21,8 +21,7 @@ async def create_classroom(
     service = ServiceClassroom(session)
     return await service.create(name, current_user)
 
-@router.get('/')
-# @router.get('/', response_model=list[SchemaClassroom])
+@router.get("", response_model=list[SchemaClassroom])
 async def get_all(
     session: AsyncSession = Depends(get_async_session),
     current_user: Users = Depends(get_current_user)
@@ -30,14 +29,6 @@ async def get_all(
     service = ServiceClassroom(session)
     return await service.get_all(current_user)
 
-# @router.get('/{id}')
-# async def get(
-#     id: uuid.UUID,
-#     session: AsyncSession = Depends(get_async_session),
-#     current_user: Users = Depends(get_current_user)
-# ):
-#     service = ServiceClassroom(session)
-#     return await service.get(id, current_user)
 
 @router.patch('/{id}')
 async def update(
@@ -59,3 +50,11 @@ async def delete(
     service = ServiceClassroom(session)
     return await service.delete(id)
     
+# @router.get('/{id}')
+# async def get(
+#     id: uuid.UUID,
+#     session: AsyncSession = Depends(get_async_session),
+#     current_user: Users = Depends(get_current_user)
+# ):
+#     service = ServiceClassroom(session)
+#     return await service.get(id, current_user)

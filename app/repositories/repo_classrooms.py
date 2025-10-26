@@ -33,15 +33,10 @@ class RepoClassroom():
     async def get_teacher_classrooms(self, teacher_id: uuid.UUID):
         stmt = (
             select(
-                Classrooms.id.label("classroom_id"),
-                Classrooms.name.label("classroom_name"),
-                Users.id.label("student_id"),
-                func.concat(Users.first_name, " ", Users.last_name).label("student_name")
+                Classrooms.id,
+                Classrooms.name
             )
-            .outerjoin(teachers_students, teachers_students.c.classroom_id == Classrooms.id)
-            .outerjoin(Users, Users.id == teachers_students.c.student_id)
             .where(Classrooms.teacher_id == teacher_id)
-            .order_by(Classrooms.id)
         )
         result = await self.session.execute(stmt)
         return result.mappings().all()
@@ -69,6 +64,40 @@ class RepoClassroom():
     #     rows = response.all()
     #     return rows
 
+
+    # async def get_performans_data(self, student_id: uuid.UUID):
+    #     agg_stmt = (
+    #         select(
+    #             Users.id.label("student_id"),
+    #             func.concat(Users.first_name, " ", Users.last_name).label("student_name"),
+    #             func.count().filter(Submissions.status == "verificated").label("verificated_works_count"),
+    #             func.avg(Submissions.total_score).filter(Submissions.status == "verificated").label("avg_score"),
+    #         )
+    #         .where(Users.id == student_id)
+    #         .outerjoin(Submissions, Users.id == Submissions.student_id)
+    #         .group_by(Users.id, Users.first_name, Users.last_name)
+    #     )
+    #     agg_result = await self.session.execute(agg_stmt)
+    #     agg_data = agg_result.mappings().all()
+
+    #     works_stmt = (
+    #         select(
+    #             Submissions.id.label("submission_id"),
+    #             Submissions.student_id.label('student_id'),
+    #             Submissions.status,
+    #             Submissions.total_score,
+    #             Tasks.title.label("task_title"),
+    #             Tasks.max_score
+    #         )
+    #         .join(Tasks, Submissions.task_id == Tasks.id)
+    #         .where(Submissions.student_id == student_id)
+    #     )
+    #     works_result = await self.session.execute(works_stmt)
+    #     works_data = works_result.mappings().all()
+    #     return {
+    #         "agg_data": agg_data,
+    #         "works_data": works_data,
+    #     }
 
 
         

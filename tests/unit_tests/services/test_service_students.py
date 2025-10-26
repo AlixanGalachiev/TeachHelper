@@ -108,10 +108,7 @@ async def test_get_performans_data_student_not_exists(mock_service_students, tea
 @pytest.mark.asyncio
 async def test_get_performans_data_success(mock_service_students, teacher_user, student_id, monkeypatch):
     monkeypatch.setattr("app.services.teacher.service_students.RepoStudents.exists", AsyncMock(return_value=True))
-    mock_data = {
-        "agg_data": {},
-        "works_data": []
-    }
+    mock_data = {}
     monkeypatch.setattr("app.services.teacher.service_students.RepoStudents.get_performans_data", AsyncMock(return_value=mock_data))
 
     result = await mock_service_students.get_performans_data(student_id, teacher_user)

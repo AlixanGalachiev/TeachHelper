@@ -12,7 +12,7 @@ from app.utils.oAuth import create_access_token
 from main import app
 from app.schemas.schema_auth import UserRead, UserRegister
 
-@pytest_asyncio.fixture(scope="function")
+@pytest.fixture(scope="function")
 def user_register() -> UserRegister:
     """Пользователь на регистрацию"""
     return UserRegister(
@@ -23,42 +23,32 @@ def user_register() -> UserRegister:
         role="teacher"
     )
 
-@pytest_asyncio.fixture(scope="function")
-def user_not_exitsts() -> UserRegister:
-    """Пользователь на регистрацию"""
-    return UserRegister(
-        first_name="Иван",
-        last_name="Иванов",
-        email="empty@example.com",
-        password="123456",
-        role="teacher"
-    )
-
 
 @pytest.mark.asyncio(loop_scope="session")
 async def test_auth(client, user_register):
-    response = await client.post("/auth/register", json=user_register.model_dump())
-    data = response.json()
+        response = await client.post("/auth/register", json=user_register.model_dump())
+        data = response.json()
 
-    assert response.status_code == 200
-    assert data["first_name"] == user_register.first_name
-    assert data["last_name"] == user_register.last_name
-    assert data["email"] == user_register.email
-    assert data["role"] == user_register.role
+        assert response.status_code == 200
+        assert data["first_name"] == "Иван"
+        assert data["last_name"] == "Иванов"
+        assert data["email"] == user_register.email
+        assert data["role"] == "teacher"
 
 
 @pytest.mark.asyncio(loop_scope="session")
 async def test_login(client, user_register):
-    response = await client.post("/auth/login",
-        headers = {"Content-Type": "application/x-www-form-urlencoded"},
-        data={
-            "username": user_register.email,
-            "password": user_register.password
-        }
-    )
+    
+        response = await client.post("/auth/login",
+            headers = {"Content-Type": "application/x-www-form-urlencoded"},
+            data={
+                "username": user_register.email,
+                "password": user_register.password,
+            }
+        )
 
-    assert response.status_code == 403
-    assert response.json()["detail"] == "Please confirm your email first"
+        assert response.status_code == 403
+        assert response.json()["detail"] == "Please confirm your email first"
 
 
 @pytest.mark.asyncio(loop_scope="session")
@@ -123,10 +113,7 @@ async def test_me(client, user_register):
 async def test_delete(client, user_register):
     token = create_access_token({"email": user_register.email}, settings.SECRET)
     response = await client.get("/auth/me", headers={"Authorization": f"Bearer {token}"})
-
-    
     user = response.json()
-    print(user)
 
     token = create_access_token({"email": user_register.email}, settings.SECRET)
     response = await client.delete(

@@ -1,7 +1,6 @@
 from enum import Enum
 import uuid
 from pydantic import BaseModel, EmailStr
-from typing import Optional, Literal
 
 class UserRegRole(str, Enum):
     teacher = "teacher"
