@@ -11,7 +11,7 @@ class Tasks(Base):
     teacher_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), ForeignKey("users.id", ondelete="CASCADE"), nullable=False)
     title: Mapped[str] = mapped_column(String(), nullable=False)
     description: Mapped[str] = mapped_column(String())
-    deadline: Mapped[datetime] = mapped_column(DateTime)
+    deadline: Mapped[datetime] = mapped_column(DateTime, nullable=True)
     max_score: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
 
     exercises: Mapped[list["Exercises"]] = relationship(
