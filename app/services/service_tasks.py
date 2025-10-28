@@ -3,10 +3,14 @@ import uuid
 from fastapi import HTTPException, status, Response
 from fastapi.responses import JSONResponse
 from sqlalchemy import select
+from sqlalchemy.orm import  joinedload, selectinload, Load
+
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.schemas.schema_tasks import TaskCreate, TaskRead, TasksFilters, TasksReadEasy, TasksPatch
-from app.models.model_tasks import Tasks
+from app.repositories.repo_task import RepoTasks
+from app.schemas.schema_auth import UserRole
+from app.schemas.schema_tasks import ExerciseCriterionRead, ExerciseRead, TaskCreate, TaskRead, TaskSchema, TasksFilters, TasksReadEasy, TasksPatch
+from app.models.model_tasks import ExerciseCriterions, Exercises, Tasks
 from app.models.model_users import Users
 from app.utils.logger import logger
 
@@ -15,73 +19,120 @@ class ServiceTasks:
         self.session = session
 
     async def create(self, teacher: Users, data: TaskCreate):
-        stmt = (
-            select(Tasks)
-            .where(Tasks.teacher_id == teacher.id)
-            .where(Tasks.title == data.title)
-            .where(Tasks.subject_id == data.subject_id)
-        )
-        task_db = await self.session.execute(stmt)
-        if task_db.scalar_one_or_none() is not None:
-            raise HTTPException(
-                status_code=status.HTTP_409_CONFLICT,
-                detail="Task with this name is already exists for choosed subject"
-        )
+        try:
+            if teacher.role is UserRole.student:
+                raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Students can't create tasks")
 
-        task = Tasks(**data.model_dump(), teacher_id=teacher.id)
-        self.session.add(task)
-        await self.session.flush()
-        await self.session.commit()
-        return TaskRead.model_validate(task)
+            task = Tasks(
+                name=data.name,
+                description=data.description,
+                subject_id=data.subject_id,
+                teacher_id=teacher.id,
+            )
 
-        
+            for ex_data in data.exercises:
+                exercise = Exercises(
+                    name=ex_data.name,
+                    description=ex_data.description,
+                    order_index=ex_data.order_index,
+                )
+
+                for cr_data in ex_data.criterions:
+                    criterion = ExerciseCriterions(
+                        name=cr_data.name,
+                        score=cr_data.score,
+                    )
+                    exercise.criterions.append(criterion)
+                task.exercises.append(exercise)
+
+            self.session.add(task)
+            await self.session.commit()
+            return TaskRead.model_validate(task).model_dump()
+        except HTTPException as exc:
+            raise
+
+        except Exception as exc:
+            await self.session.rollback()
+            raise HTTPException(status_code=500, detail="Internal Server Error")
+
 
     async def get_all(self, teacher: Users, filters: TasksFilters):
-        stmt = select(
-            Tasks.id,
-            Tasks.title,
-            Tasks.updated_at,
-            ).where(Tasks.teacher_id == teacher.id)
-
-        if filters.title:
-            stmt = stmt.where(Tasks.title.ilike(f"%{filters.title}%"))
-            
-        if filters.subject_id:
-            stmt = stmt.where(Tasks.subject_id == filters.subject_id)
-
-        result = await self.session.execute(stmt)
-        tasks = result.mappings().all()
-        return [TasksReadEasy.model_validate(task) for task in tasks]
-
-
-    # async def task_add(self, ):
-    #     pass
-
-    # Нужно определиться что должно вывестись
-    # async def get(self, id: uuid.UUID, teacher: Users):
-    #     pass
-
-    async def patch(self, id: uuid.UUID, update_data: TasksPatch, teacher: Users):
         try:
-            task = await self.session.get(Tasks, id)
+            if teacher.role is UserRole.student:
+                raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Students can't create tasks")
+
+            query = (
+                select(
+                    Tasks.id,
+                    Tasks.name,
+                    Tasks.updated_at
+                )
+                .where(Tasks.teacher_id == teacher.id)
+            )
+            if filters.name is not None:
+               query = query.where(Tasks.name.ilike(f'%{filters.name}%'))
+            
+            response = await self.session.execute(query)
+            tasks =  response.mappings().all()
+            return [TasksReadEasy.model_validate(task) for task in tasks]
+    
+        except HTTPException as exc:
+            raise
+
+        except Exception as exc:
+            await self.session.rollback()
+            raise HTTPException(status_code=500, detail="Internal Server Error")
+
+
+    async def get(self, id: uuid.UUID, teacher: Users):
+        try:
+            if teacher.role is UserRole.student:
+                raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Students can't create tasks")
+            repo = RepoTasks(self.session)
+            task = await repo.get(id)
+
             if not task: 
                 raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Task not found")
 
-            if task.teacher_id != teacher.id:
-                raise HTTPException(
-                    status_code=status.HTTP_403_FORBIDDEN,
-                    detail="You don't have permission to delete this task"
-                )
+            return TaskSchema.model_validate(task)
 
-            update_data = update_data.model_dump(exclude_unset=True)
-            for key, value in update_data.items():
-                setattr(task, key, value)
+        except HTTPException as exc:
+            raise
 
-            await self.session.commit()
-            return JSONResponse(
-                content={"status": "ok"},
-                status_code=status.HTTP_200_OK
-            )
+        except Exception as exc:
+            logger.exception(exc)
+            await self.session.rollback()
+            raise HTTPException(status_code=500, detail="Internal Server Error")
+
+
+    async def update(self, id: uuid.UUID, update_data: TaskSchema, teacher: Users):
+        try:
+            if teacher.role is UserRole.student:
+                raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Student can't do this")
+            task_db = await self.session.get(Tasks, id)
+
+            if not task_db: 
+                raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Task not found")
+            
+            exercises_orm = []
+            for exercise_data in update_data.exercises:
+                criterions_orm = [
+                    ExerciseCriterions(**criterion.model_dump())
+                    for criterion in exercise_data.criterions
+                ]
+
+                exercise_dict = exercise_data.model_dump(exclude={"criterions"})
+                exercise_orm = Exercises(**exercise_dict)
+                exercise_orm.criterions = criterions_orm
+                exercises_orm.append(exercise_orm)
+
+            task_dict = update_data.model_dump(exclude={"exercises"})
+            task_orm = Tasks(**task_dict)
+            task_orm.exercises = exercises_orm
+
+            merged_task =  await self.session.merge(task_orm)
+            await self.session.commit()            
+            return TaskSchema.model_validate(merged_task).model_dump()
 
         except HTTPException as exc:
             raise
@@ -99,9 +150,12 @@ class ServiceTasks:
                     status_code=status.HTTP_403_FORBIDDEN,
                     detail="You don't have permission to delete this task"
                 )
+            if task is None:
+                raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="This task not exists")
 
             await self.session.delete(task)
             await self.session.commit()
+
             return JSONResponse(
                 content={"status": "ok"},
                 status_code=status.HTTP_200_OK

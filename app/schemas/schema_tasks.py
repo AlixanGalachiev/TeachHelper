@@ -1,13 +1,73 @@
-from pydantic import BaseModel, field_validator
+from pydantic import BaseModel
 import uuid
-from datetime import timezone, datetime
+from datetime import datetime
+
+class ExerciseCriterionCreate(BaseModel):
+    name:  str
+    score: int
+
+    model_config = {
+        "json_schema_extra": {
+            "example": {
+                "name": "Посчитал до 10",
+                "score": 1,
+            }
+        }
+    }
+
+class ExerciseCriterionRead(BaseModel):
+    id:    uuid.UUID
+    name:  str
+    score: int
+    model_config = {
+        "from_attributes": True
+    }
+
+class ExerciseCreate(BaseModel):
+    name:        str
+    description: str
+    order_index: int
+
+    criterions: list[ExerciseCriterionCreate]
+
+    model_config = {
+        "json_schema_extra": {
+            "example": {
+                "name": "Посчитай 10",
+                "description": "Очень важно",
+                "order_index": 1,  
+                "criterions": [
+                    {
+                        "name": "Посчитал до 10",
+                        "score": 1,
+                    }
+                ]
+            }
+        }
+    }
+
+
+class ExerciseRead(ExerciseCreate):
+    id:          uuid.UUID
+    name:        str
+    description: str
+    order_index: int
+    criterions: list[ExerciseCriterionRead]
+    
+    model_config = {
+        "from_attributes": True,
+        "by_alias": True,
+        
+    }
+
 
 class TaskCreate(BaseModel):
-    subject_id: uuid.UUID
-    name: str
+    subject_id:  uuid.UUID
+    name:        str
     description: str
-    deadline: datetime|None = None
-    max_score: int
+    deadline:    datetime|None = None
+    
+    exercises: list[ExerciseCreate]
 
     model_config = {
         "json_schema_extra": {
@@ -15,13 +75,70 @@ class TaskCreate(BaseModel):
                 "subject_id": "b1697c3a-5486-4bea-8aed-4e2552be92f3",
                 "name": "Задача по математике",
                 "description": "Решить 10 уравнений",
-                "max_score": 100
+
+                "exercises": [{
+                        "name": "Посчитай 10",
+                        "description": "Очень важно",
+                        "order_index": 1,
+                        "criterions": [
+                            {
+                                "name": "Посчитал до 10",
+                                "score": 1,
+                            }
+                        ]
+                    }
+                ]
             }
         }
     }
 
-class TaskRead(TaskCreate):
+class ExerciseCriterions(BaseModel):
+    id:          uuid.UUID
+    name:        str
+    score:       int
+    exercise_id: uuid.UUID
+    created_at:  datetime
+
+    model_config = {
+        "from_attributes": True,
+    }
+
+class ExerciseSchema(BaseModel):
+    id:          uuid.UUID
+    name:        str        
+    description: str            
+    order_index: int            
+    task_id:     uuid.UUID
+    updated_at:  datetime
+    criterions:  list[ExerciseCriterions]
+
+    model_config = {
+        "from_attributes": True,
+    }      
+
+class TaskSchema(BaseModel):
+    id:          uuid.UUID
+    name:        str
+    description: str
+    deadline:   datetime|None = None
+
+    subject_id: uuid.UUID
+    teacher_id: uuid.UUID
+    updated_at: datetime
+    created_at: datetime
+    exercises:   list[ExerciseSchema]
+
+    model_config = {
+        "from_attributes": True,
+    }
+    
+
+class TaskRead(BaseModel):
     id: uuid.UUID
+    name:        str
+    description: str
+    deadline:    datetime|None = None
+    exercises: list[ExerciseRead]
     updated_at: datetime
     created_at: datetime
 
@@ -34,9 +151,23 @@ class TaskRead(TaskCreate):
                 "name": "Задача по математике",
                 "description": "Решить 10 уравнений",
                 "deadline": "2025-12-31T23:59:59",
-                "max_score": 100,
                 "updated_at": "2023-10-26T12:00:00",
-                "created_at": "2023-10-26T12:00:00"
+                "created_at": "2023-10-26T12:00:00",
+                
+                "exercises": [{
+                        "id": "",
+                        "name": "Посчитай 10",
+                        "description": "Очень важно",
+                        "order_index": 1,
+                        "criterions": [
+                            {
+                                "id": "",
+                                "name": "Посчитал до 10",
+                                "score": 1,
+                            }
+                        ]
+                    }
+                ]
             }
         }
     }
@@ -78,7 +209,6 @@ class TasksPatch(BaseModel):
 
 class TasksFilters(BaseModel):
     name: str|None = None
-    subject_id: uuid.UUID|None = None
 
     model_config = {
         "json_schema_extra": {
