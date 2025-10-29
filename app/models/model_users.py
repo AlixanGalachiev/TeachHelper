@@ -23,15 +23,6 @@ teachers_students = Table(
     Column("classroom_id", UUID(as_uuid=True), ForeignKey("classrooms.id", ondelete="SET NULL"), nullable=True),
 )
 
-users_classrooms = Table(
-    "users_classrooms",
-    Base.metadata,
-    Column("id", UUID(as_uuid=True), primary_key=True, default=uuid.uuid4),
-    Column("user_id", UUID(as_uuid=True), ForeignKey("users.id", ondelete="CASCADE")),
-    Column("classroom_id", UUID(as_uuid=True), ForeignKey("classrooms.id", ondelete="CASCADE")),
-    
-)
-
 
 class Users(Base):
     id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, index=True, default=uuid.uuid4)
@@ -56,4 +47,11 @@ class Users(Base):
         primaryjoin=lambda: Users.id == teachers_students.c.teacher_id,
         secondaryjoin=lambda: Users.id == teachers_students.c.student_id,
         back_populates="teachers",
+    )
+
+    classrooms: Mapped[list["Classrooms"]] = relationship(
+        "Classrooms",
+        backref="teacher",
+        cascade="all, delete-orphan",
+        passive_deletes=True,
     )
