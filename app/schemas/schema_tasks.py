@@ -7,6 +7,7 @@ class ExerciseCriterionCreate(BaseModel):
     score: int
 
     model_config = {
+        "from_attributes": True,
         "json_schema_extra": {
             "example": {
                 "name": "Посчитал до 10",
@@ -31,6 +32,7 @@ class ExerciseCreate(BaseModel):
     criterions: list[ExerciseCriterionCreate]
 
     model_config = {
+        "from_attributes": True,
         "json_schema_extra": {
             "example": {
                 "name": "Посчитай 10",
@@ -70,6 +72,7 @@ class TaskCreate(BaseModel):
     exercises: list[ExerciseCreate]
 
     model_config = {
+        "from_attributes": True,
         "json_schema_extra": {
             "example": {
                 "subject_id": "b1697c3a-5486-4bea-8aed-4e2552be92f3",
@@ -93,23 +96,25 @@ class TaskCreate(BaseModel):
     }
 
 class ExerciseCriterions(BaseModel):
-    id:          uuid.UUID
+    id:          uuid.UUID|None = None
     name:        str
     score:       int
     exercise_id: uuid.UUID
-    created_at:  datetime
+    updated_at:  datetime|None = None
+    created_at:  datetime|None = None
 
     model_config = {
         "from_attributes": True,
     }
 
 class ExerciseSchema(BaseModel):
-    id:          uuid.UUID
+    id:          uuid.UUID|None = None
     name:        str        
     description: str            
     order_index: int            
     task_id:     uuid.UUID
-    updated_at:  datetime
+    updated_at:  datetime|None = None
+    created_at:  datetime|None = None
     criterions:  list[ExerciseCriterions]
 
     model_config = {
@@ -124,8 +129,8 @@ class TaskSchema(BaseModel):
 
     subject_id: uuid.UUID
     teacher_id: uuid.UUID
-    updated_at: datetime
-    created_at: datetime
+    updated_at: datetime|None = None
+    created_at: datetime|None = None
     exercises:   list[ExerciseSchema]
 
     model_config = {

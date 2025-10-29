@@ -8,20 +8,19 @@ from sqlalchemy.orm import  joinedload, selectinload, Load
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.repositories.repo_task import RepoTasks
-from app.schemas.schema_auth import UserRole
 from app.schemas.schema_tasks import ExerciseCriterionRead, ExerciseRead, TaskCreate, TaskRead, TaskSchema, TasksFilters, TasksReadEasy, TasksPatch
 from app.models.model_tasks import ExerciseCriterions, Exercises, Tasks
-from app.models.model_users import Users
+from app.models.model_users import RoleUser, Users
 from app.utils.logger import logger
 
 class ServiceTasks:
     def __init__(self, session: AsyncSession):
         self.session = session
 
-    async def create(self, teacher: Users, data: TaskCreate):
+    async def create(self, teacher: Users, data: TaskCreate) -> TaskSchema:
         try:
-            if teacher.role is UserRole.student:
-                raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Students can't create tasks")
+            if teacher.role is RoleUser.student:
+                raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="User don't have permission to delete this task")
 
             task = Tasks(
                 name=data.name,
@@ -47,19 +46,24 @@ class ServiceTasks:
 
             self.session.add(task)
             await self.session.commit()
-            return TaskRead.model_validate(task).model_dump()
+            return JSONResponse(
+                content=TaskSchema.model_validate(task).model_dump(mode='json'),
+                status_code=status.HTTP_201_CREATED
+            )
+
         except HTTPException as exc:
             raise
 
         except Exception as exc:
+            logger.exception(exc)
             await self.session.rollback()
             raise HTTPException(status_code=500, detail="Internal Server Error")
 
 
-    async def get_all(self, teacher: Users, filters: TasksFilters):
+    async def get_all(self, teacher: Users, filters: TasksFilters) -> list[TasksReadEasy]:
         try:
-            if teacher.role is UserRole.student:
-                raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Students can't create tasks")
+            if teacher.role is RoleUser.student:
+                raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="User don't have permission to delete this task")
 
             query = (
                 select(
@@ -84,10 +88,10 @@ class ServiceTasks:
             raise HTTPException(status_code=500, detail="Internal Server Error")
 
 
-    async def get(self, id: uuid.UUID, teacher: Users):
+    async def get(self, id: uuid.UUID, teacher: Users) -> TaskSchema:
         try:
-            if teacher.role is UserRole.student:
-                raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Students can't create tasks")
+            if teacher.role is RoleUser.student:
+                raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="User don't have permission to delete this task")
             repo = RepoTasks(self.session)
             task = await repo.get(id)
 
@@ -105,12 +109,12 @@ class ServiceTasks:
             raise HTTPException(status_code=500, detail="Internal Server Error")
 
 
-    async def update(self, id: uuid.UUID, update_data: TaskSchema, teacher: Users):
+    async def update(self, id: uuid.UUID, update_data: TaskSchema, teacher: Users) -> TaskSchema:
         try:
-            if teacher.role is UserRole.student:
-                raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Student can't do this")
-            task_db = await self.session.get(Tasks, id)
+            if teacher.role is RoleUser.student:
+                raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="User don't have permission to delete this task")
 
+            task_db = await self.session.get(Tasks, id)
             if not task_db: 
                 raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Task not found")
             
@@ -130,9 +134,10 @@ class ServiceTasks:
             task_orm = Tasks(**task_dict)
             task_orm.exercises = exercises_orm
 
-            merged_task =  await self.session.merge(task_orm)
-            await self.session.commit()            
-            return TaskSchema.model_validate(merged_task).model_dump()
+            await self.session.merge(task_orm)
+            await self.session.commit()
+            repo = RepoTasks(self.session)
+            return TaskSchema.model_validate(await repo.get(id)).model_dump(mode="json")
 
         except HTTPException as exc:
             raise
@@ -142,16 +147,17 @@ class ServiceTasks:
             raise HTTPException(status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 
-    async def delete(self, id: uuid.UUID, teacher: Users):
+    async def delete(self, id: uuid.UUID, teacher: Users) -> JSONResponse:
         try:
+            if teacher.role is RoleUser.student:
+                raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="User don't have permission to delete this task")
+
             task = await self.session.get(Tasks, id)
-            if task.teacher_id != teacher.id:
-                raise HTTPException(
-                    status_code=status.HTTP_403_FORBIDDEN,
-                    detail="You don't have permission to delete this task"
-                )
             if task is None:
-                raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="This task not exists")
+                raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Task not found")
+
+            if task.teacher_id != teacher.id:
+                raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="User don't have permission to delete this task")
 
             await self.session.delete(task)
             await self.session.commit()

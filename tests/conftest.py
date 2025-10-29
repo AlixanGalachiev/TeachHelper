@@ -1,8 +1,11 @@
-import asyncio
 import os
+import uuid
 
 import pytest_asyncio
 
+from app.models.model_classroom import Classrooms
+from app.models.model_tasks import ExerciseCriterions, Exercises, Subjects, Tasks
+from app.models.model_users import Users
 from app.schemas.schema_classroom import SchemaClassroom
 from app.utils.oAuth import create_access_token
 
@@ -13,71 +16,133 @@ from httpx import ASGITransport, AsyncClient
 import pytest
 from app.models.base import Base
 from main import app
-from app.db import AsyncSessionLocal, engine, engine_async, get_async_session
-from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession, async_sessionmaker
-
-
+from app.db import AsyncSessionLocal, engine_async
 from app.config.config_app import settings
 
-@pytest.fixture(scope="session")
-def session_teacher_data() -> UserRegister:
-    return UserRegister(
-        first_name="Teacher",
-        last_name="Test",
-        email="teacher_test@example.com",
-        password="123456",
-        role="teacher"
-    )
+@pytest_asyncio.fixture(scope="function", autouse=False)
+async def async_session():
+    async with AsyncSessionLocal() as session:
+        yield session
 
-@pytest.fixture(scope="session")
-def session_student_data() -> UserRegister:
-    return UserRegister(
-        first_name="Student",
-        last_name="Test",
-        email="student_test@example.com",
-        password="123456",
-        role="student"
-    )
-
-
-@pytest.fixture(scope="function")
-def session_token_teacher(session_teacher_data):
-    token = create_access_token({"email": session_teacher_data.email}, settings.SECRET)
-    return f"Bearer {token}"
-
-@pytest_asyncio.fixture(loop_scope="session", scope="module", autouse=True)
+@pytest_asyncio.fixture(scope="module", autouse=True)
 async def setup_db():
     print("setup_db")
     async with engine_async.begin() as conn:
         await conn.run_sync(Base.metadata.drop_all)
         await conn.run_sync(Base.metadata.create_all)
-    print("setup_db ready")
-    yield
 
-@pytest_asyncio.fixture(loop_scope="session", scope="module", autouse=True)
-async def prepare_db(setup_db, session_teacher_data, session_student_data):
-    transport = ASGITransport(app=app)
-    async with AsyncClient(transport=transport, base_url="http://test") as client:
-        teacher_response = await client.post("/auth/register", json=session_teacher_data.model_dump())
-        teacher_db = teacher_response.json()
-        print(teacher_db)
-        confirm_token_teacher = create_access_token({"email": session_teacher_data.email}, settings.SECRET_CONFIRM_KEY)
-        await client.post("/auth/confirm_email", params={'token': f"Bearer {confirm_token_teacher}"})
+    async with AsyncSessionLocal() as session:
+        admin = Users(
+            first_name="Admin",
+            last_name="Test",
+            email="admin_test@example.com",
+            password="123456",
+            role="admin",
+            is_verificated=True
+        )
 
-        token_teacher = create_access_token({"email": session_teacher_data.email}, settings.SECRET)
-        await client.post("/classrooms", headers={"Authorization": f"Bearer {token_teacher}"}, params={'name': f"room1"})
+        teacher = Users(
+            first_name="Teacher",
+            last_name="Test",
+            email="teacher_test@example.com",
+            password="123456",
+            role="teacher",
+            is_verificated=True
+        )
+
+        student = Users(
+            first_name="Student",
+            last_name="Test",
+            email="student_test@example.com",
+            password="123456",
+            role="student",
+            is_verificated=True
+        )
+
+        subject = Subjects(name="Math")
+
+        session.add_all([admin, subject, teacher, student,])
+        await session.commit() 
+        await session.refresh(admin)
+        await session.refresh(teacher)
+        await session.refresh(student)
+        await session.refresh(subject)
+
+        classroom = Classrooms(
+            name="test room",
+            teacher_id = teacher.id
+        )
+
+        task = Tasks(
+            subject_id= subject.id,
+            teacher_id= teacher.id,
+            name= "Задача conftest",
+            description= "Тестовая задача созданная в conftest",
+
+            exercises = [
+                Exercises(
+                    name="Посчитай 10",
+                    description="Очень важно",
+                    order_index=1,
+                    criterions=[
+                        ExerciseCriterions(
+                            name="Посчитал до 10",
+                            score=1
+                        )
+                    ]
+                )
+            ]
+        )
+        session.add_all([task, classroom])
+        await session.commit()
+        await session.aclose()
+
+        yield {
+            "teacher_id": teacher.id,
+            "student_id": student.id,
+            "subject_id": subject.id,
+            "task_id": task.id,
+            "classroom_id": classroom.id,
+        }
 
 
-        student_response = await client.post("/auth/register", json=session_student_data.model_dump())
-        student_db = student_response.json()
-        
-        confirm_token_student = create_access_token({"email": session_student_data.email}, settings.SECRET_CONFIRM_KEY)
-        token_student = create_access_token({"email": session_student_data.email}, settings.SECRET)
-        await client.post("/auth/confirm_email", params={'token': f"Bearer {confirm_token_student}"})
-        await client.post(f"teachers/{teacher_db['id']}",  headers={"Authorization": f"Bearer {token_student}"})
+@pytest.fixture(scope="function")
+def teacher_id(setup_db) -> uuid.UUID:
+    return setup_db["teacher_id"]
+
+@pytest.fixture(scope="function")
+def student_id(setup_db) -> uuid.UUID:
+    return setup_db["student_id"]
+
+@pytest.fixture(scope="function")
+def subject_id(setup_db) -> uuid.UUID:
+    return setup_db["subject_id"]
+
+@pytest.fixture(scope="function")
+def task_id(setup_db) -> uuid.UUID:
+    return setup_db["task_id"]
+
+@pytest.fixture(scope="function")
+def classroom_id(setup_db) -> uuid.UUID:
+    return setup_db["classroom_id"]
+
+@pytest.fixture(scope="function")
+def session_token_admin():
+    token = create_access_token({"email": "admin_test@example.com"}, settings.SECRET)
+    return f"Bearer {token}"
+
+@pytest.fixture(scope="function")
+def session_token_teacher():
+    token = create_access_token({"email": "teacher_test@example.com"}, settings.SECRET)
+    return f"Bearer {token}"
+
+@pytest.fixture(scope="function")
+def session_token_student():
+    token = create_access_token({"email": "student_test@example.com"}, settings.SECRET)
+    return f"Bearer {token}"
 
 
-@pytest_asyncio.fixture(scope="function")
+@pytest_asyncio.fixture
 async def client():
     transport = ASGITransport(app=app)
     async with AsyncClient(transport=transport, base_url="http://test") as client:

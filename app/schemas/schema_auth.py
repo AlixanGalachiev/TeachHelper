@@ -2,14 +2,11 @@ from enum import Enum
 import uuid
 from pydantic import BaseModel, EmailStr
 
+from app.models.model_users import RoleUser
+
 class UserRegRole(str, Enum):
     teacher = "teacher"
     student = "student"
-
-class UserRole(str, Enum):
-    teacher = "teacher"
-    student = "student"
-    admin = "admin"
 
 class UserBase(BaseModel):
     first_name: str
@@ -52,7 +49,7 @@ class UserResetPassword(BaseModel):
 
 class UserRead(UserBase):
     id: uuid.UUID
-    role: UserRole
+    role: RoleUser
     is_verificated: bool
     
     model_config = {

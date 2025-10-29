@@ -3,12 +3,11 @@ from fastapi import status, HTTPException
 from fastapi.responses import JSONResponse
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.models.model_users import Users
+from app.models.model_users import RoleUser, Users
 from app.repositories.repo_classrooms import RepoClassroom
 from app.repositories.repo_user import RepoUser
 from app.repositories.teacher.repo_students import RepoStudents
 
-from app.schemas.schema_auth import UserRole
 from app.exceptions.exceptions import ErrorRolePermissionDenied
 from app.utils.logger import logger
 
@@ -21,8 +20,8 @@ class ServiceStudents:
 
 
     async def get_all(self, user: Users):
-        if user.role != UserRole.teacher:
-            raise ErrorRolePermissionDenied(UserRole.teacher)
+        if user.role != RoleUser.teacher:
+            raise ErrorRolePermissionDenied(RoleUser.teacher)
 
         students_repo = RepoStudents(self.session)
         students = await students_repo.get_all(user)
@@ -37,8 +36,8 @@ class ServiceStudents:
 
 
     async def get_performans_data(self, student_id: uuid.UUID, user: Users):
-        if user.role != UserRole.teacher:
-            raise ErrorRolePermissionDenied(UserRole.teacher)
+        if user.role != RoleUser.teacher:
+            raise ErrorRolePermissionDenied(RoleUser.teacher)
 
         repo = RepoStudents(self.session)
         if not await repo.exists(user.id, student_id):
@@ -56,8 +55,8 @@ class ServiceStudents:
         user: Users
     ):
         try:
-            if user.role != UserRole.teacher:
-                raise ErrorRolePermissionDenied(UserRole.teacher)
+            if user.role != RoleUser.teacher:
+                raise ErrorRolePermissionDenied(RoleUser.teacher)
             
             repo = RepoStudents(self.session)
             if not await repo.exists(user.id, student_id):
@@ -87,8 +86,8 @@ class ServiceStudents:
     ):
         repo = RepoStudents(self.session)
         try:
-            if user.role != UserRole.teacher:
-                raise ErrorRolePermissionDenied(UserRole.teacher)
+            if user.role != RoleUser.teacher:
+                raise ErrorRolePermissionDenied(RoleUser.teacher)
             
             if not await repo.exists(user.id, student_id):
                 raise HTTPException(
@@ -115,8 +114,8 @@ class ServiceStudents:
         user: Users
     ):
         try:
-            if user.role != UserRole.teacher:
-                raise ErrorRolePermissionDenied(UserRole.teacher)
+            if user.role != RoleUser.teacher:
+                raise ErrorRolePermissionDenied(RoleUser.teacher)
             
             repo = RepoStudents(self.session)
             if not await repo.exists(user.id, student_id):
@@ -134,8 +133,8 @@ class ServiceStudents:
             raise HTTPException(status.HTTP_500_INTERNAL_SERVER_ERROR)
 
     async def add_teacher(self, teacher_id: uuid.UUID, student: Users):
-        if student.role != UserRole.student:
-            raise ErrorRolePermissionDenied(UserRole.student)
+        if student.role != RoleUser.student:
+            raise ErrorRolePermissionDenied(RoleUser.student)
 
         repo_user = RepoUser(self.session)
         if await repo_user.get(teacher_id) is  None:

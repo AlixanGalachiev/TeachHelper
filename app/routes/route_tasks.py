@@ -4,14 +4,14 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.db import get_async_session
 from app.models.model_users import Users
-from app.schemas.schema_tasks import ExerciseCreate, ExerciseCriterionCreate, TaskCreate, TaskRead, TasksFilters, TasksPatch
+from app.schemas.schema_tasks import ExerciseCreate, ExerciseCriterionCreate, TaskCreate, TaskRead, TaskSchema, TasksFilters, TasksPatch
 from app.services.service_tasks import ServiceTasks
 from app.utils.oAuth import get_current_user
 
 
 router = APIRouter(prefix="/tasks", tags=["Tasks"])
 
-@router.post("/")
+@router.post("")
 # @router.post("/", response_model=TaskRead)
 async def create(
     data: TaskCreate,
@@ -21,7 +21,7 @@ async def create(
     service = ServiceTasks(session)
     return await service.create(teacher, data)
 
-@router.get("/")
+@router.get("")
 async def get_all(
     filters: TasksFilters = Depends(),
     session: AsyncSession = Depends(get_async_session),
@@ -31,7 +31,7 @@ async def get_all(
     return await service.get_all(teacher, filters)
 
 
-@router.get("/{id}")
+@router.get("/{id}", response_model=TaskSchema)
 async def get(
     id: uuid.UUID,
     session: AsyncSession = Depends(get_async_session),

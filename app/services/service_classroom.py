@@ -75,8 +75,8 @@ class ServiceClassroom:
         
         
     # async def get_performans_data(self, student_id: uuid.UUID, user: Users):
-    #     if user.role != UserRole.teacher:
-    #         raise ErrorRolePermissionDenied(UserRole.teacher)
+    #     if user.role != RoleUser.teacher:
+    #         raise ErrorRolePermissionDenied(RoleUser.teacher)
 
     #     repo = RepoStudents(self.session)
     #     if not await repo.exists(user.id, student_id):

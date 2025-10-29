@@ -8,6 +8,7 @@ from app.routes.route_classroom import router as classroom_router
 from app.routes.route_students import router as teacher_students_router
 from app.routes.route_students import router2 as student_teachers_router
 from app.routes.route_tasks import router as tasks_router
+from app.routes.route_subjects import router as subjects_router
 
 
 def create_app() -> FastAPI:
@@ -28,6 +29,7 @@ def create_app() -> FastAPI:
     app.include_router(teacher_students_router)
     app.include_router(student_teachers_router)
     app.include_router(tasks_router)
+    app.include_router(subjects_router)
 
 
     return app

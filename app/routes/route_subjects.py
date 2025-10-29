@@ -9,24 +9,24 @@ from app.services.service_subjects import ServiceSubjects
 from app.utils.oAuth import get_current_user
 
 
-router = APIRouter(prefix="/subjects", tags="Subjects")
+router = APIRouter(prefix="/subjects", tags=["Subjects"])
 
-@router.post("/")
+@router.post("")
 async def create(
     name: str,
     session: AsyncSession = Depends(get_async_session),
     user: Users = Depends(get_current_user)
 ):
     service = ServiceSubjects(session)
-    return service.create(name=name, user=user) 
+    return await service.create(name=name, user=user)
     
-@router.get("/")
+@router.get("")
 async def get_all(
     session: AsyncSession = Depends(get_async_session),
     user: Users = Depends(get_current_user)
 ):
     service = ServiceSubjects(session)
-    return service.get_all()
+    return await service.get_all()
     
 @router.patch("/{id}")
 async def patch(
@@ -35,7 +35,7 @@ async def patch(
     user: Users = Depends(get_current_user)
 ):
     service = ServiceSubjects(session)
-    return service.patch(id=id, user=user) 
+    return await service.patch(id=id, user=user) 
     
 @router.delete("/{id}")
 async def delete(
@@ -43,5 +43,5 @@ async def delete(
     user: Users = Depends(get_current_user)
 ):
     service = ServiceSubjects(session)
-    return service.delete(id=id, user=user) 
+    return await service.delete(id=id, user=user) 
     

@@ -1,7 +1,8 @@
+from time import time
 import uuid
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy.orm import joinedload
+from sqlalchemy.orm import joinedload, selectinload
 
 from app.models.model_tasks import Exercises, Tasks
 
@@ -15,8 +16,8 @@ class RepoTasks():
             select(Tasks)
             .where(Tasks.id == id)
             .options(
-                joinedload(Tasks.exercises)
-                .joinedload(Exercises.criterions)
+                selectinload(Tasks.exercises)
+                .selectinload(Exercises.criterions)
             )
         )
         response = await self.session.execute(stmt)

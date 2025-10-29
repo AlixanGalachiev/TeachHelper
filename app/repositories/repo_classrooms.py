@@ -2,11 +2,12 @@
 
 import uuid
 
+from fastapi import HTTPException, status
 from sqlalchemy import func, select
 from sqlalchemy.orm import selectinload, load_only
 
 from app.models.model_classroom import Classrooms
-from app.models.model_users import Users, users_classrooms, teachers_students
+from app.models.model_users import Users, teachers_students
 
 
 class RepoClassroom():
@@ -14,20 +15,21 @@ class RepoClassroom():
         self.session = session
 
     async def exists(self, name: str|None = None, classroom_id: uuid.UUID|None = None, user_id: uuid.UUID|None = None):
-        stmt = select(func.count()).select_from(Classrooms)
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Updated db backenders must redone their code")
+        # stmt = select(func.count()).select_from(Classrooms)
         
-        if user_id is not None:
-            stmt = stmt.join(users_classrooms, Classrooms.id == users_classrooms.c.classroom_id)
-            stmt = stmt.where(users_classrooms.c.user_id == user_id)
+        # if user_id is not None:
+        #     stmt = stmt.join(users_classrooms, Classrooms.id == users_classrooms.c.classroom_id)
+        #     stmt = stmt.where(users_classrooms.c.user_id == user_id)
             
-        if name is not None:
-            stmt = stmt.where(Classrooms.name == name)
+        # if name is not None:
+        #     stmt = stmt.where(Classrooms.name == name)
             
-        if classroom_id is not None:
-            stmt = stmt.where(Classrooms.id == classroom_id)
+        # if classroom_id is not None:
+        #     stmt = stmt.where(Classrooms.id == classroom_id)
             
-        reslut = await self.session.execute(stmt)
-        res = reslut.scalar()
+        # reslut = await self.session.execute(stmt)
+        # res = reslut.scalar()
         return res > 0
     
     async def get_teacher_classrooms(self, teacher_id: uuid.UUID):

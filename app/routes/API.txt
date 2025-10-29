@@ -73,5 +73,5 @@ students
     POST   /
     GET    /
     GET    /{id}
-    PATCH  /{id}
+    PUT  /{id}
     DELETE /{id}

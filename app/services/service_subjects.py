@@ -41,12 +41,13 @@ class ServiceSubjects:
                 Subjects.name
                 ))
             result = await self.session.execute(stmt)
-            return [SubjectRead(row) for row in result.mappings().all()]
+            return [SubjectRead.model_validate(row) for row in result.mappings().all()]
 
         except HTTPException as exc:
             raise
         
-        except:
+        except Exception as exc:
+            logger.exception(exc)
             await self.session.rollback()
             raise HTTPException(status_code=500, detail="Internal Server Error")
 
@@ -67,7 +68,8 @@ class ServiceSubjects:
         except HTTPException as exc:
             raise
         
-        except:
+        except Exception as exc:
+            logger.exception(exc)
             await self.session.rollback()
             raise HTTPException(status_code=500, detail="Internal Server Error")
 
@@ -89,7 +91,8 @@ class ServiceSubjects:
         except HTTPException as exc:
             raise
         
-        except:
+        except Exception as exc:
+            logger.exception(exc)
             await self.session.rollback()
             raise HTTPException(status_code=500, detail="Internal Server Error")
 

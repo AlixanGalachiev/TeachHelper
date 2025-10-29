@@ -45,3 +45,29 @@ service_classroom
     delete
         success
         classroom_not_exists
+
+
+service_tasks
+    post("/")
+        test_create_success
+        test_create_user_have_not_access
+
+    get("/")
+        test_get_all_success
+        test_get_all_user_have_not_access
+
+    get("/{id}")
+        test_get_success
+        test_get_user_have_not_access
+        test_task_not_exists
+
+    put("/{id}")
+        test_update_success
+        test_update_user_have_not_access
+        test_task_not_exists
+
+    delete("/{id}")
+        test_delete_success
+        test_delete_user_have_not_access
+        test_delete_wrong_user
+        test_task_not_exists
