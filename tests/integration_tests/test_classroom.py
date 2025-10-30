@@ -18,9 +18,10 @@ async def test_classrooms_create_classroom(client, session_token_teacher):
         '/classrooms',
         headers={"Authorization": session_token_teacher},
         params={"name":"lal"}
-        )
-    
+    )
+
     data = response.json()
+
     assert response.status_code == 200
     assert "id" in data
     assert data["name"] == "lal"

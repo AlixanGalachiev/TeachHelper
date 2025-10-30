@@ -2,10 +2,11 @@ import os
 import uuid
 
 import pytest_asyncio
+from sqlalchemy import insert
 
 from app.models.model_classroom import Classrooms
 from app.models.model_tasks import ExerciseCriterions, Exercises, Subjects, Tasks
-from app.models.model_users import Users
+from app.models.model_users import Users, teachers_students
 from app.schemas.schema_classroom import SchemaClassroom
 from app.utils.oAuth import create_access_token
 
@@ -47,7 +48,8 @@ async def setup_db():
             email="teacher_test@example.com",
             password="123456",
             role="teacher",
-            is_verificated=True
+            is_verificated=True,
+            students = []
         )
 
         student = Users(
@@ -68,6 +70,9 @@ async def setup_db():
         await session.refresh(student)
         await session.refresh(subject)
 
+        stmt = insert(teachers_students).values(teacher_id=teacher.id, student_id=student.id)
+        await session.execute(stmt)
+        await session.commit()
         classroom = Classrooms(
             name="test room",
             teacher_id = teacher.id
@@ -97,13 +102,13 @@ async def setup_db():
         await session.commit()
         await session.aclose()
 
-        yield {
-            "teacher_id": teacher.id,
-            "student_id": student.id,
-            "subject_id": subject.id,
-            "task_id": task.id,
-            "classroom_id": classroom.id,
-        }
+    yield {
+        "teacher_id": teacher.id,
+        "student_id": student.id,
+        "subject_id": subject.id,
+        "task_id": task.id,
+        "classroom_id": classroom.id,
+    }
 
 
 @pytest.fixture(scope="function")

@@ -47,8 +47,7 @@ class RepoStudents:
                 Submissions.student_id.label('student_id'),
                 Submissions.status,
                 Submissions.total_score,
-                Tasks.title.label("task_title"),
-                Tasks.max_score
+                Tasks.name.label("task_name"),
             )
             .join(Tasks, Submissions.task_id == Tasks.id)
             .where(Submissions.student_id == student_id)

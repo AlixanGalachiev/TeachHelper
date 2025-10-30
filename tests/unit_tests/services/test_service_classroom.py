@@ -40,7 +40,11 @@ def mock_service():
 
 @pytest.mark.asyncio
 async def test_create_success(teacher, mock_service, monkeypatch):
-    monkeypatch.setattr("app.services.service_classroom.RepoClassroom.exists", AsyncMock(return_value=False))
+    mock_response = Mock()
+    mock_response.scalar_one_or_none.return_value = None 
+    mock_execute = AsyncMock(return_value=mock_response)
+    
+    monkeypatch.setattr(mock_service.session, "execute", mock_execute)
     monkeypatch.setattr("app.services.service_classroom.RepoTeacher.append_classroom", AsyncMock(return_value=None))
     
     result = await mock_service.create("A1", teacher)
@@ -55,7 +59,7 @@ async def test_create_classroom_name_exists(teacher, mock_service, monkeypatch):
         await mock_service.create("A1", teacher)
     
     assert exc.value.status_code == status.HTTP_409_CONFLICT
-    assert exc.value.detail == "Class with this name already exists"
+    assert exc.value.detail == "Classroom with this name already exists"
 
 
         
@@ -81,7 +85,7 @@ async def test_update_classroom_name_exists(teacher, mock_service, monkeypatch):
         await mock_service.create("A1", teacher)
     
     assert exc.value.status_code == status.HTTP_409_CONFLICT
-    assert exc.value.detail == "Class with this name already exists"
+    assert exc.value.detail == "Classroom with this name already exists"
     
     
 
@@ -93,4 +97,4 @@ async def test_delete__classroom_name_exists(teacher, mock_service, monkeypatch)
         await mock_service.create("A1", teacher)
     
     assert exc.value.status_code == status.HTTP_409_CONFLICT
-    assert exc.value.detail == "Class with this name already exists"
+    assert exc.value.detail == "Classroom with this name already exists"

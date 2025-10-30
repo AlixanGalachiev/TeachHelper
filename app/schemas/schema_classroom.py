@@ -9,8 +9,8 @@ class SchemaClassroomBase(BaseModel):
 
 class SchemaClassroom(BaseModel):
     id: uuid.UUID
+    teacher_id: uuid.UUID
     name: str
-    
     model_config = {
         'from_attributes': True
     }
