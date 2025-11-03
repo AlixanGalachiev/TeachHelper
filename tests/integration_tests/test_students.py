@@ -51,7 +51,6 @@ async def test_get_performans_data(client, session_token_teacher):
     assert "student_id" in data
     assert "student_name" in data
     assert "verificated_works_count" in data
-    assert "avg_score" in data
     assert "works" in data
 
 

@@ -1,7 +1,7 @@
 import uuid
 from sqlalchemy import func, insert, select, update, delete
 from sqlalchemy.ext.asyncio import AsyncSession
-from app.models.model_tasks import Submissions, Tasks
+from app.models.model_tasks import Works, Tasks
 
 
 from app.models.model_users import RoleUser, Users, teachers_students
@@ -31,11 +31,10 @@ class RepoStudents:
             select(
                 Users.id.label("student_id"),
                 func.concat(Users.first_name, " ", Users.last_name).label("student_name"),
-                func.count().filter(Submissions.status == "verificated").label("verificated_works_count"),
-                func.avg(Submissions.total_score).filter(Submissions.status == "verificated").label("avg_score"),
+                func.count().filter(Works.status == "verificated").label("verificated_works_count"),
             )
             .where(Users.id == student_id)
-            .outerjoin(Submissions, Users.id == Submissions.student_id)
+            .outerjoin(Works, Users.id == Works.student_id)
             .group_by(Users.id, Users.first_name, Users.last_name)
         )
         agg_result = await self.session.execute(agg_stmt)
@@ -43,14 +42,13 @@ class RepoStudents:
 
         works_stmt = (
             select(
-                Submissions.id.label("submission_id"),
-                Submissions.student_id.label('student_id'),
-                Submissions.status,
-                Submissions.total_score,
+                Works.id.label("submission_id"),
+                Works.student_id.label('student_id'),
+                Works.status,
                 Tasks.name.label("task_name"),
             )
-            .join(Tasks, Submissions.task_id == Tasks.id)
-            .where(Submissions.student_id == student_id)
+            .join(Tasks, Works.task_id == Tasks.id)
+            .where(Works.student_id == student_id)
         )
         works_result = await self.session.execute(works_stmt)
         works_data = works_result.mappings().all()

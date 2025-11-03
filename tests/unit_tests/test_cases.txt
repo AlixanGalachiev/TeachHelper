@@ -71,3 +71,21 @@ service_tasks
         test_delete_user_have_not_access
         test_delete_wrong_user
         test_task_not_exists
+
+service_works
+    get("")
+        test_get_success
+        test_get_not_exists
+
+    get("/{id}")
+        test_get_all_success
+
+    update("/{id}")
+        test_update_success
+        test_update_user_is_teacher
+        test_update_not_exists
+
+    delete("/{id}")
+        test_delete_success
+        test_delete_user_is_teacher
+        test_delete_not_exists

@@ -6,9 +6,9 @@ from sqlalchemy import select
 from sqlalchemy.orm import selectinload
 
 from app.config.config_app import settings
-from app.models.model_tasks import ExerciseCriterions, Exercises, Tasks
+from app.models.model_tasks import ECriterions, Exercises, Tasks
 from app.models.model_users import Users
-from app.schemas.schema_tasks import ExerciseCreate, ExerciseCriterionCreate, TaskCreate, TaskSchema, TasksReadEasy
+from app.schemas.schema_tasks import ExerciseCreate, ExerciseCriterionCreate, TaskCreate, SchemaTask, TasksReadEasy
 from app.utils.oAuth import create_access_token
 
 @pytest_asyncio.fixture(scope="function")
@@ -35,22 +35,22 @@ async def task10(async_session, subject_id, teacher_id)->TaskCreate:
     return task
 
 @pytest_asyncio.fixture(scope="module")
-async def get_session_task(client, task_id, session_token_teacher) -> TaskSchema:
+async def get_session_task(client, task_id, session_token_teacher) -> SchemaTask:
     response = await client.get(
         f"/tasks/{task_id}",
         headers = {
             "Authorization": session_token_teacher, 
         }
     )
-    task_db = TaskSchema.model_validate(response.json())
+    task_db = SchemaTask.model_validate(response.json())
     return task_db
 
 
 @pytest_asyncio.fixture(scope="function")
-async def module_task(async_session) -> TaskSchema:
+async def module_task(async_session) -> SchemaTask:
     stmt = select(Tasks).where(Tasks.name == "Задача по математике").options(selectinload(Tasks.exercises).selectinload(Exercises.criterions))
     response = await async_session.execute(stmt)
-    task = TaskSchema.model_validate(response.scalars().first())
+    task = SchemaTask.model_validate(response.scalars().first())
     return task
 
 
@@ -86,7 +86,7 @@ async def test_create_success(client: AsyncClient, session_token_teacher: str, t
         json=TaskCreate.model_validate(task10).model_dump(mode='json')
     )
     assert response.status_code == 201
-    validate_task = TaskSchema.model_validate(response.json())
+    validate_task = SchemaTask.model_validate(response.json())
     assert task10.name == validate_task.name
 
 @pytest.mark.asyncio(loop_scope="session")
@@ -141,7 +141,7 @@ async def test_get_success(client: AsyncClient, task_id, session_token_teacher: 
     )
 
     assert response.status_code == 200
-    validate_task = TaskSchema.model_validate(response.json())
+    validate_task = SchemaTask.model_validate(response.json())
     assert validate_task.name == "Задача conftest"
 
 @pytest.mark.asyncio(loop_scope="session")
@@ -176,7 +176,7 @@ async def session_task(client, task_id, session_token_teacher):
             "Authorization": session_token_teacher, 
         }
     )
-    return TaskSchema.model_validate(response.json())
+    return SchemaTask.model_validate(response.json())
 
 
 @pytest.mark.asyncio(loop_scope="session")
@@ -196,7 +196,7 @@ async def test_update_success(client: AsyncClient, session_task, session_token_t
     )
 
     assert response.status_code == 200
-    task = TaskSchema.model_validate(response.json())
+    task = SchemaTask.model_validate(response.json())
     assert task.name                 == "New name"
     assert task.exercises[0].name == "New exer name"
 

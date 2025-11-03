@@ -95,7 +95,7 @@ class TaskCreate(BaseModel):
         }
     }
 
-class ExerciseCriterions(BaseModel):
+class ExerciseCriterionsSchema(BaseModel):
     id:          uuid.UUID|None = None
     name:        str
     score:       int
@@ -107,7 +107,7 @@ class ExerciseCriterions(BaseModel):
         "from_attributes": True,
     }
 
-class ExerciseSchema(BaseModel):
+class SchemaExercise(BaseModel):
     id:          uuid.UUID|None = None
     name:        str        
     description: str            
@@ -115,13 +115,13 @@ class ExerciseSchema(BaseModel):
     task_id:     uuid.UUID
     updated_at:  datetime|None = None
     created_at:  datetime|None = None
-    criterions:  list[ExerciseCriterions]
+    criterions:  list[ExerciseCriterionsSchema]
 
     model_config = {
         "from_attributes": True,
     }      
 
-class TaskSchema(BaseModel):
+class SchemaTask(BaseModel):
     id:          uuid.UUID
     name:        str
     description: str
@@ -131,7 +131,7 @@ class TaskSchema(BaseModel):
     teacher_id: uuid.UUID
     updated_at: datetime|None = None
     created_at: datetime|None = None
-    exercises:   list[ExerciseSchema]
+    exercises:   list[SchemaExercise]
 
     model_config = {
         "from_attributes": True,

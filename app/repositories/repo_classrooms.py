@@ -49,18 +49,18 @@ class RepoClassroom():
     #         select(
     #             func.concat(Users.first_name, " ", Users.last_name).label("student_name"),
     #             func.count(
-    #                 func.nullif(Submissions.status != "verificated", )
+    #                 func.nullif(Works.status != "verificated", )
     #             ),
-    #             Submissions.status,
-    #             Submissions.total_score,
+    #             Works.status,
+    #             Works.total_score,
     #             Tasks.title,
     #         )
     #         .where(Classrooms.id == id)
     #         .join(users_classrooms, Classrooms.id == users_classrooms.c.classroom_id)
     #         .join(Users, users_classrooms.c.user_id == Users.id)
     #         .where(Users.role == RoleUser.student)
-    #         .join(Submissions, Users.id == Submissions.student_id)
-    #         .join(Tasks, Submissions.task_id == Tasks.id)
+    #         .join(Works, Users.id == Works.student_id)
+    #         .join(Tasks, Works.task_id == Tasks.id)
     #     )
     #     response = await self.session.execute(stmt)
     #     rows = response.all()
@@ -72,11 +72,11 @@ class RepoClassroom():
     #         select(
     #             Users.id.label("student_id"),
     #             func.concat(Users.first_name, " ", Users.last_name).label("student_name"),
-    #             func.count().filter(Submissions.status == "verificated").label("verificated_works_count"),
-    #             func.avg(Submissions.total_score).filter(Submissions.status == "verificated").label("avg_score"),
+    #             func.count().filter(Works.status == "verificated").label("verificated_works_count"),
+    #             func.avg(Works.total_score).filter(Works.status == "verificated").label("avg_score"),
     #         )
     #         .where(Users.id == student_id)
-    #         .outerjoin(Submissions, Users.id == Submissions.student_id)
+    #         .outerjoin(Works, Users.id == Works.student_id)
     #         .group_by(Users.id, Users.first_name, Users.last_name)
     #     )
     #     agg_result = await self.session.execute(agg_stmt)
@@ -84,15 +84,15 @@ class RepoClassroom():
 
     #     works_stmt = (
     #         select(
-    #             Submissions.id.label("submission_id"),
-    #             Submissions.student_id.label('student_id'),
-    #             Submissions.status,
-    #             Submissions.total_score,
+    #             Works.id.label("submission_id"),
+    #             Works.student_id.label('student_id'),
+    #             Works.status,
+    #             Works.total_score,
     #             Tasks.title.label("task_title"),
     #             Tasks.max_score
     #         )
-    #         .join(Tasks, Submissions.task_id == Tasks.id)
-    #         .where(Submissions.student_id == student_id)
+    #         .join(Tasks, Works.task_id == Tasks.id)
+    #         .where(Works.student_id == student_id)
     #     )
     #     works_result = await self.session.execute(works_stmt)
     #     works_data = works_result.mappings().all()
