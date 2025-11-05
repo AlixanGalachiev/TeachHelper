@@ -9,7 +9,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.repositories.repo_task import RepoTasks
 from app.schemas.schema_tasks import ExerciseCriterionRead, ExerciseRead, TaskCreate, TaskRead, SchemaTask, TasksFilters, TasksReadEasy, TasksPatch
-from app.models.model_tasks import ACriterions, Answers, ECriterions, Exercises, Works, Tasks
+from app.models.model_tasks import ACriterions, Answers, Comments, ECriterions, Exercises, Works, Tasks
 from app.models.model_users import RoleUser, Users
 from app.utils.logger import logger
 

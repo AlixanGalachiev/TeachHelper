@@ -63,6 +63,16 @@ students
     UPDATE /{id}
     DELETE /{id}
 
+    /comments
+        POST   /{id}
+        UPDATE /{id}
+        DELETE /{id}
+
+        /files
+            POST   /{id}
+            UPDATE /{id}
+            DELETE /{id}
+
 /subjects
     POST   /
     GET    /

@@ -11,8 +11,6 @@ class Settings(BaseSettings):
     DATABASE_PASSWORD: str
     DATABASE_NAME: str
 
-    TEST_DATABASE_NAME: str
-
 
     # Security / JWT
     SECRET: str

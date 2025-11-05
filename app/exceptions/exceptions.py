@@ -1,4 +1,7 @@
+import uuid
 from fastapi import HTTPException, Response
+
+from app.models.base import Base
 
 
 class ErrorRolePermissionDenied(HTTPException):
@@ -17,6 +20,28 @@ class ErrorRolePermissionDenied(HTTPException):
         super().__init__(status_code=status_code, detail=detail)
 
 
-class SuccessReposne(Response):
-    def __init__(self, content = {"success": "ok"}, status_code = 200, headers = None, media_type = None, background = None):
-        super().__init__(content, status_code, headers, media_type, background)
+class ErrorAlreadyExists(HTTPException):
+    def __init__(
+        self,
+        entity: Base,
+        status_code: int = 409,
+        detail = None,
+    ):
+        if detail is None:
+            detail = (
+                f"{entity.__name__[0:-1]}, already exists"
+            )
+        super().__init__(status_code=status_code, detail=detail)
+
+class ErrorNotExists(HTTPException):
+    def __init__(
+        self,
+        entity: Base,
+        status_code: int = 404,
+        detail = None,
+    ):
+        if detail is None:
+            detail = (
+                f"This {entity.__name__[0:-1]}, not exists"
+            )
+        super().__init__(status_code=status_code, detail=detail)
