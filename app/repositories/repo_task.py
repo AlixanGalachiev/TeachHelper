@@ -4,8 +4,10 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import joinedload, selectinload
 
-from app.models.model_tasks import ACriterions, Answers, Exercises, Works, Tasks
+from app.models.model_tasks import Exercises, Tasks
+from app.models.model_works import ACriterions, Answers, Works
 from app.schemas.schema_tasks import SchemaTask
+from app.utils.logger import logger
 
 class RepoTasks():
     def __init__(self, session: AsyncSession):
@@ -29,23 +31,27 @@ class RepoTasks():
         task: SchemaTask,
         students_ids: list[uuid.UUID]
     ):
-        submissions = [
-            Works(task_id=task.id, student_id=student_id) 
-            for student_id in students_ids
-        ]
-        self.session.add_all(submissions)
-        await self.session.flush()
+        stmt = select(Works.student_id).where(Works.task_id == task.id).where(Works.student_id.in_(students_ids))
+        response = await self.session.execute(stmt)
+        excluded_ids = response.scalars().all()
+        works = []
+        for student_id in students_ids:
+            if student_id not in excluded_ids:
+                works.append(Works(task_id=task.id, student_id=student_id))
+                
 
+        self.session.add_all(works)
+        await self.session.flush()
 
         all_answers = []
         all_a_criterions = []
 
-        for submission in submissions:
+        for work in works:
             # Проверяем, что task.exercises существует и является списком (из-за relationship)
             if hasattr(task, 'exercises') and task.exercises: 
                 for exercise in task.exercises:
                     # Создаем Answer
-                    answer = Answers(submission_id=submission.id, exercise_id=exercise.id)
+                    answer = Answers(id=uuid.uuid4(), work_id=work.id, exercise_id=exercise.id)
                     all_answers.append(answer)
 
                     # Создаем ACriterions для этого Answer
@@ -53,7 +59,7 @@ class RepoTasks():
                         a_criterions = [
                             ACriterions(
                                 answer_id=answer.id, 
-                                exercise_criterion_id=e_criterion.id
+                                e_criterion_id=e_criterion.id
                             ) 
                             for e_criterion in exercise.criterions
                         ]

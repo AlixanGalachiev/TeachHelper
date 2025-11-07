@@ -1,7 +1,12 @@
 from fastapi import HTTPException, status
+from fastapi.responses import JSONResponse
 from sqlalchemy.orm import joinedload
+from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.models.model_tasks import Answers, Comments, StatusWork
+from app.exceptions.exceptions import *
+from app.models.model_comments import Comments
+from app.models.model_users import RoleUser, Users
+from app.schemas.schema_comment import CommentCreate, CommentUpdate
 from app.utils.logger import logger
 
 class ServiceComments():

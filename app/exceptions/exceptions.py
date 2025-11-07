@@ -19,6 +19,18 @@ class ErrorRolePermissionDenied(HTTPException):
             )
         super().__init__(status_code=status_code, detail=detail)
 
+class ErrorPermissionDenied(HTTPException):
+    def __init__(
+        self,
+        status_code: int = 403,
+        detail: str|None = None
+    ):
+        if detail is None:
+            detail = (
+                "This user haven't permission to make this"
+            )
+        super().__init__(status_code=status_code, detail=detail)
+
 
 class ErrorAlreadyExists(HTTPException):
     def __init__(

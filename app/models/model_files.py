@@ -15,7 +15,7 @@ class Files(Base):
     filename: Mapped[str] = mapped_column(String, nullable=False)
     bucket: Mapped[str] = mapped_column(String, nullable=False)
     original_size: Mapped[int] = mapped_column(Integer, nullable=False)
-    original_mime: Mapped[int] = mapped_column(Integer, nullable=False)
+    original_mime: Mapped[str] = mapped_column(String, nullable=False)
 
 @event.listens_for(Files, 'before_delete')
 async def delete_file_from_minio(mapper, connection, target):

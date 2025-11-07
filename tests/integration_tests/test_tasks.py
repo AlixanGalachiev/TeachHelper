@@ -213,7 +213,7 @@ async def test_update_success(client: AsyncClient, session_task, session_token_t
     )
 
 @pytest.mark.asyncio(loop_scope="session")
-async def test_update_user_have_not_access(client: AsyncClient, session_task, session_token_student: str, session_token_teacher: str, task_id: uuid.UUID):
+async def test_update_user_have_not_access(client: AsyncClient, session_task, session_token_student: str, task_id: uuid.UUID):
     assert session_task.name      == "Задача conftest"
     assert session_task.exercises[0].name == "Посчитай 10"
     session_task.name              = "New name1"

@@ -1,7 +1,8 @@
 import uuid
 from sqlalchemy import func, insert, select, update, delete
 from sqlalchemy.ext.asyncio import AsyncSession
-from app.models.model_tasks import Works, Tasks
+from app.models.model_tasks import Tasks
+from app.models.model_works import Works
 
 
 from app.models.model_users import RoleUser, Users, teachers_students

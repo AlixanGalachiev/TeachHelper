@@ -6,6 +6,7 @@ from app.db import get_async_session
 from app.models.model_users import Users
 from app.schemas.schema_tasks import TaskCreate, TaskRead, SchemaTask, TasksFilters
 from app.services.service_tasks import ServiceTasks
+from app.services.service_work import ServiceWork
 from app.utils.oAuth import get_current_user
 
 
@@ -38,15 +39,16 @@ async def get(
     service = ServiceTasks(session)
     return await service.get(id, teacher)
 
-@router.post("/{id}/start")
+@router.post("/{task_id}/start")
 async def create_works(
-    id: uuid.UUID,
+    task_id: uuid.UUID,
     students_ids: list[uuid.UUID],
+    classrooms_ids: list[uuid.UUID],
     session: AsyncSession = Depends(get_async_session),
     teacher: Users = Depends(get_current_user)
 ):
-    service = ServiceTasks(session)
-    return await service.create_works(id, students_ids, teacher)
+    service = ServiceWork(session)
+    return await service.create_works(task_id, teacher, students_ids, classrooms_ids)
 
 @router.put("/{id}")
 async def update(

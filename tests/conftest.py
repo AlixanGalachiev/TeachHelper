@@ -5,13 +5,12 @@ import pytest_asyncio
 from sqlalchemy import insert
 
 from app.models.model_classroom import Classrooms
-from app.models.model_tasks import ACriterions, Answers, ECriterions, Exercises, Subjects, Tasks, Works
+from app.models.model_tasks import ECriterions, Exercises, Subjects, Tasks
 from app.models.model_users import Users, teachers_students
-from app.schemas.schema_classroom import SchemaClassroom
+from app.models.model_works import ACriterions, Answers, Works
 from app.utils.oAuth import create_access_token
 
 os.environ["ENV_FILE"] = ".env_test" #важно, если оно будет после импорта app переменная не подбросится и тесты снесут бой :)
-from app.schemas.schema_auth import UserRegister
 
 from httpx import ASGITransport, AsyncClient
 import pytest
@@ -167,41 +166,41 @@ async def setup_db():
     except Exception as exc:
         logger.exception(exc)
 
-@pytest.fixture(scope="function")
+@pytest.fixture(scope="module")
 def teacher_id(setup_db) -> uuid.UUID:
     return setup_db["teacher_id"]
 
-@pytest.fixture(scope="function")
+@pytest.fixture(scope="module")
 def work_id(setup_db) -> uuid.UUID:
     return setup_db["work_id"]
 
-@pytest.fixture(scope="function")
+@pytest.fixture(scope="module")
 def student_id(setup_db) -> uuid.UUID:
     return setup_db["student_id"]
 
-@pytest.fixture(scope="function")
+@pytest.fixture(scope="module")
 def subject_id(setup_db) -> uuid.UUID:
     return setup_db["subject_id"]
 
-@pytest.fixture(scope="function")
+@pytest.fixture(scope="module")
 def task_id(setup_db) -> uuid.UUID:
     return setup_db["task_id"]
 
-@pytest.fixture(scope="function")
+@pytest.fixture(scope="module")
 def classroom_id(setup_db) -> uuid.UUID:
     return setup_db["classroom_id"]
 
-@pytest.fixture(scope="function")
+@pytest.fixture(scope="module")
 def session_token_admin():
     token = create_access_token({"email": "admin_test@example.com"}, settings.SECRET)
     return f"Bearer {token}"
 
-@pytest.fixture(scope="function")
+@pytest.fixture(scope="module")
 def session_token_teacher():
     token = create_access_token({"email": "teacher_test@example.com"}, settings.SECRET)
     return f"Bearer {token}"
 
-@pytest.fixture(scope="function")
+@pytest.fixture(scope="module")
 def session_token_student():
     token = create_access_token({"email": "student_test@example.com"}, settings.SECRET)
     return f"Bearer {token}"

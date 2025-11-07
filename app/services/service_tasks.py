@@ -8,8 +8,9 @@ from sqlalchemy.orm import  joinedload, selectinload, Load
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.repositories.repo_task import RepoTasks
-from app.schemas.schema_tasks import ExerciseCriterionRead, ExerciseRead, TaskCreate, TaskRead, SchemaTask, TasksFilters, TasksReadEasy, TasksPatch
-from app.models.model_tasks import ACriterions, Answers, Comments, ECriterions, Exercises, Works, Tasks
+from app.schemas.schema_tasks import TaskCreate, SchemaTask, TasksFilters, TasksReadEasy
+from app.models.model_tasks import  ECriterions, Exercises, Tasks
+
 from app.models.model_users import RoleUser, Users
 from app.utils.logger import logger
 
@@ -108,43 +109,6 @@ class ServiceTasks:
             await self.session.rollback()
             raise HTTPException(status_code=500, detail="Internal Server Error")
 
-    async def create_works(
-        self,
-        task_id: uuid.UUID,
-        students_ids: list[uuid.UUID],
-        teacher: Users
-    ):
-        try:
-            if teacher.role is RoleUser.student:
-                raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="User don't have permission to delete this task")
-
-            repo = RepoTasks(self.session)
-            task_db = await repo.get(task_id)
-
-            if task_db is None:
-                raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Task not found")
-
-            task = SchemaTask.model_validate(task_db)
-
-            if task.teacher_id != teacher.id:
-                raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="User don't have permission to delete this task")
-
-            repo.create_works(task, students_ids)
-            await self.session.commit()
-
-            return JSONResponse(
-                content={"status": "ok"},
-                status_code=status.HTTP_201_CREATED
-            )
-
-        except HTTPException as exc:
-            logger.exception(exc)
-            raise
-
-        except Exception:
-            await self.session.rollback()
-            raise HTTPException(status_code=500, detail="Internal Server Error")    
-
 
     async def update(self, id: uuid.UUID, update_data: SchemaTask, teacher: Users) -> SchemaTask:
         try:
@@ -176,7 +140,7 @@ class ServiceTasks:
             repo = RepoTasks(self.session)
             return SchemaTask.model_validate(await repo.get(id)).model_dump(mode="json")
 
-        except HTTPException as exc:
+        except HTTPException:
             raise
 
         except Exception as exc:
@@ -204,7 +168,7 @@ class ServiceTasks:
                 status_code=status.HTTP_200_OK
             )
 
-        except HTTPException as exc:
+        except HTTPException:
             raise
 
         except Exception as exc:

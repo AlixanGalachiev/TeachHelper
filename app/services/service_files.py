@@ -1,16 +1,19 @@
 
 import uuid
+
 from fastapi import HTTPException, UploadFile, logger
 from fastapi.responses import JSONResponse
-from pydantic import BaseModel
+from sqlalchemy.ext.asyncio import AsyncSession
+
 from app.config.boto import get_boto_client
 from app.exceptions.exceptions import *
+from app.models.model_files import Files
 from app.models.model_users import RoleUser, Users
-from tests.conftest import async_session
+from app.schemas.schema_files import FileSchema
 
 
 class ServiceFiles:
-    def __init__(self, session: async_session):
+    def __init__(self, session: AsyncSession):
         self.session = session
 
 
@@ -35,7 +38,7 @@ class ServiceFiles:
                     
             await self.session.commit()
             return JSONResponse(
-                content={'files': [FileRead.model_validate(f).model_dump(mode="json") for f in files_orm]},
+                content={'files': [FileSchema.model_validate(f).model_dump(mode="json") for f in files_orm]},
                 status_code=201
             )
 

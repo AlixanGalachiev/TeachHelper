@@ -29,8 +29,6 @@ class Answers(Base):
         "Files",
         secondary="answers_files",
         backref="answer",
-        cascade="all, delete-orphan",
-        passive_deletes=True        
     )
 
     exercise: Mapped["Exercises"] = relationship("Exercises", backref="answer")

@@ -1,10 +1,10 @@
 import uuid
 
 from fastapi import HTTPException, status
+from fastapi.responses import JSONResponse
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.exceptions.exceptions import SuccessReposne
 from app.models.model_tasks import Subjects
 from app.models.model_users import RoleUser, Users
 from app.schemas.schema_subjects import SubjectRead
@@ -25,7 +25,7 @@ class ServiceSubjects:
             subject = Subjects(name=name)
             self.session.add(subject)
             await self.session.commit()
-            return SuccessReposne()
+            return JSONResponse(content={"status": "ok"})
 
         except HTTPException as exc:
             raise 
@@ -64,7 +64,7 @@ class ServiceSubjects:
             if subject is None:
                 raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="This subject not exists")
 
-            return SuccessReposne()
+            return JSONResponse(content={"status": "ok"})
         except HTTPException as exc:
             raise
         
@@ -86,7 +86,7 @@ class ServiceSubjects:
                 raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="This subject not exists")
             
             await self.session.delete(subject)
-            return SuccessReposne()
+            return JSONResponse(content={"status": "ok"})
 
         except HTTPException as exc:
             raise

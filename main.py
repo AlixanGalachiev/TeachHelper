@@ -1,4 +1,5 @@
 import json
+import uuid
 import uvicorn
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
@@ -11,6 +12,7 @@ from app.routes.route_students import router2 as student_teachers_router
 from app.routes.route_tasks import router as tasks_router
 from app.routes.route_subjects import router as subjects_router
 from app.routes.route_works import router as works_router
+from app.schemas.schema_work import WorkAllFilters
 
 
 def create_app() -> FastAPI:
@@ -42,4 +44,3 @@ app = create_app()
 
 if __name__ == "__main__":
     uvicorn.run("main:app", host="0.0.0.0", port=8000, reload=True)
-
