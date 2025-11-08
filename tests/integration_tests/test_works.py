@@ -11,6 +11,7 @@ from app.models.model_users import Users
 from app.models.model_works import StatusWork
 from app.services.service_work import WorkUpdate
 from app.utils.oAuth import create_access_token
+from app.schemas.schema_files import FileSchema
 
 @pytest.fixture
 def update_data():
@@ -409,7 +410,15 @@ async def test_send_work_errors(
 # Ученик в работе может менять статус работы, менять файлы в ответах(с дз), 
 @pytest.mark.asyncio
 async def test_update_success(client, session_token_student, work_id, update_data):
-    print(update_data)
+    # print(update_data)
+    # FileSchema(
+    #     "id": uuid.UUID("ecefeaf2-d21d-426f-b415-9ff1dfb4da0a"),
+    #     "user_id": student_id,
+    #     "filename": "simple.txt",
+    #     "bucket": "comment",
+    #     "original_size": "12",
+    #     "original_mime": ".txt",
+    # )
     update_data.answers[0].files = 'fileeeeeeeeeeeeeee'
     response = await client.put(
         f"/works/{work_id}",

@@ -1,13 +1,18 @@
+import io
 import os
 import uuid
 
+import aioboto3
+from minio import Minio
 import pytest_asyncio
 from sqlalchemy import insert
 
+from app.config.boto import get_boto_client
 from app.models.model_classroom import Classrooms
+from app.models.model_files import Files
 from app.models.model_tasks import ECriterions, Exercises, Subjects, Tasks
 from app.models.model_users import Users, teachers_students
-from app.models.model_works import ACriterions, Answers, Works
+from app.models.model_works import ACriterions, Answers, Works, answers_files
 from app.utils.oAuth import create_access_token
 
 os.environ["ENV_FILE"] = ".env_test" #важно, если оно будет после импорта app переменная не подбросится и тесты снесут бой :)
@@ -24,6 +29,35 @@ from app.utils.logger import logger
 async def async_session():
     async with AsyncSessionLocal() as session:
         yield session
+
+@pytest.fixture(scope="module", autouse=True)
+def prepare_minio():
+    mc = Minio(
+        "localhost:9000",
+        access_key=os.getenv("MINIO_USER"),
+        secret_key=os.getenv("MINIO_PASSWORD"),
+        secure=False  # Для HTTP (не HTTPS)
+    )
+
+    buckets = ["answers", "comments", "tasks"]
+
+    for bucket in buckets:
+        found = mc.bucket_exists(bucket)
+        if not found:
+            mc.make_bucket(bucket)
+
+    # async def get_boto_client():
+    #     url = f"http://{os.getenv("MINIO_HOST")}:{os.getenv("MINIO_PORT")}"
+    #     session = aioboto3.Session()
+    #     async with session.client(
+    #         's3',
+    #         endpoint_url=url,  # Для MinIO
+    #         aws_access_key_id=os.getenv("MINIO_USER"),
+    #         aws_secret_access_key=os.getenv("MINIO_PASSWORD"),
+    #         region_name='us-east-1'
+    #     ) as client:
+    #         yield client
+
 
 @pytest_asyncio.fixture(scope="module", autouse=True)
 async def setup_db():
@@ -44,6 +78,7 @@ async def setup_db():
         work_id=uuid.UUID("48fd40b4-3d01-4ad3-998e-2338dbacd376")
         answer_id=uuid.UUID("d5c8edc9-c427-4bb3-af6a-367f0bf49e16")
         a_criterion_id=uuid.UUID("d1a6db6f-2b6a-4cfe-95c0-6c512a9ab953")
+        student_answer_file_id=uuid.UUID("ecefeaf2-d21d-426f-b415-9ff1dfb4da0a")
 
 
 
@@ -147,6 +182,45 @@ async def setup_db():
             session.add_all([task, classroom, work])
             await session.commit()
             await session.aclose()
+
+
+            buffer = io.BytesIO("Some usual texts".encode())
+            buffer.seek(0, 2)
+            size = buffer.tell()
+            buffer.seek(0)
+            url = f"http://{os.getenv("MINIO_HOST")}:{os.getenv("MINIO_PORT")}"
+            session_boto = aioboto3.Session()
+            async with session_boto.client(
+                's3',
+                endpoint_url=url,  # Для MinIO
+                aws_access_key_id=os.getenv("MINIO_USER"),
+                aws_secret_access_key=os.getenv("MINIO_PASSWORD"),
+                region_name='us-east-1'
+            ) as s3:
+                await s3.upload_fileobj(
+                    buffer,
+                    "comment",
+                    os.getenv("MINIO_PASSWORD")
+                )
+            file_orm = Files(
+                id=student_answer_file_id,
+                user_id=student_id,
+                filename="simple.txt",
+                bucket="comment",
+                original_size=size,
+                original_mime=".txt",
+            )
+            session.add(file_orm)
+            data = {
+                "file_id": student_answer_file_id,
+                "answer_id": answer_id
+            }
+
+            # Формируем запрос
+            await session.flush()
+            stmt = insert(answers_files).values(data)
+            await session.execute(stmt)
+            await session.commit()
 
         yield {
             "admin_id": admin_id,

@@ -1,5 +1,20 @@
 import aioboto3
 import os
+from minio import Minio
+
+mc = Minio(
+    "localhost:9000",
+    access_key=os.getenv("MINIO_USER"),
+    secret_key=os.getenv("MINIO_PASSWORD"),
+    secure=False  # Для HTTP (не HTTPS)
+)
+
+buckets = ["answers", "comments", "tasks"]
+
+for bucket in buckets:
+    found = mc.bucket_exists(bucket)
+    if not found:
+        mc.make_bucket(bucket)
 
 
 
