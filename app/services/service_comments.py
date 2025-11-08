@@ -1,9 +1,12 @@
+import uuid
 from fastapi import HTTPException, status
 from fastapi.responses import JSONResponse
 from sqlalchemy.orm import joinedload
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.exceptions.exceptions import *
+from app.config.boto import get_boto_client
+from app.config.config_app import settings
 from app.models.model_comments import Comments
 from app.models.model_users import RoleUser, Users
 from app.schemas.schema_comment import CommentCreate, CommentUpdate
@@ -78,12 +81,14 @@ class ServiceComments():
             if comment_db is None:
                 raise ErrorNotExists(comment_id, Comments)
 
-            s3 = get_boto_client()
-            for file in comment_db.files:
-                await s3.delete_object(
-                    bucket="comments",
-                    Key=file.s3_key
-                )
+            bucket = settings.MINIO_BUCKET
+            async with get_boto_client() as s3:
+                for file in comment_db.files:
+                    file_key = f"{file.id}/{file.filename}"
+                    await s3.delete_object(
+                        Bucket=bucket,
+                        Key=file_key
+                    )
 
             await self.session.delete(comment_db)
             await self.session.commit()

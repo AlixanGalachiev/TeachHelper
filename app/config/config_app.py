@@ -20,6 +20,12 @@ class Settings(BaseSettings):
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 120
 
     FRONT_URL: str
+    
+    # CORS
+    CORS_ORIGINS: str = "*"  # Для продакшена укажите конкретные домены через запятую
+    
+    # MinIO
+    MINIO_BUCKET: str = "teachhelper"  # Единый bucket для всех файлов
 
     model_config = SettingsConfigDict(env_file=".env", env_file_encoding="utf-8", extra="ignore")
 

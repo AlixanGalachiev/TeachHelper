@@ -12,14 +12,21 @@ from app.routes.route_students import router2 as student_teachers_router
 from app.routes.route_tasks import router as tasks_router
 from app.routes.route_subjects import router as subjects_router
 from app.routes.route_works import router as works_router
+from app.routes.route_files import router as files_router
 from app.schemas.schema_work import WorkAllFilters
+from app.config.config_app import settings
 
 
 def create_app() -> FastAPI:
     app = FastAPI(title="RU-Lang MVP API")
+    
+    # Настройка CORS из переменных окружения
+    cors_origins = settings.CORS_ORIGINS.split(",") if settings.CORS_ORIGINS != "*" else ["*"]
+    cors_origins = [origin.strip() for origin in cors_origins]
+    
     app.add_middleware(
         CORSMiddleware,
-        allow_origins=["*"],
+        allow_origins=cors_origins,
         allow_credentials=True,
         allow_methods=["*"],
         allow_headers=["*"],
@@ -35,6 +42,7 @@ def create_app() -> FastAPI:
     app.include_router(tasks_router)
     app.include_router(subjects_router)
     app.include_router(works_router)
+    app.include_router(files_router)
 
 
     return app

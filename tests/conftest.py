@@ -31,7 +31,7 @@ async def async_session():
         yield session
 
 @pytest.fixture(scope="module", autouse=True)
-def prepare_minio():
+def prepare_minio():    
     mc = Minio(
         "localhost:9000",
         access_key=os.getenv("MINIO_USER"),
@@ -39,24 +39,11 @@ def prepare_minio():
         secure=False  # Для HTTP (не HTTPS)
     )
 
-    buckets = ["answers", "comments", "tasks"]
-
-    for bucket in buckets:
-        found = mc.bucket_exists(bucket)
-        if not found:
-            mc.make_bucket(bucket)
-
-    # async def get_boto_client():
-    #     url = f"http://{os.getenv("MINIO_HOST")}:{os.getenv("MINIO_PORT")}"
-    #     session = aioboto3.Session()
-    #     async with session.client(
-    #         's3',
-    #         endpoint_url=url,  # Для MinIO
-    #         aws_access_key_id=os.getenv("MINIO_USER"),
-    #         aws_secret_access_key=os.getenv("MINIO_PASSWORD"),
-    #         region_name='us-east-1'
-    #     ) as client:
-    #         yield client
+    # Создаем единый bucket для всех файлов
+    bucket_name = settings.MINIO_BUCKET
+    found = mc.bucket_exists(bucket_name)
+    if not found:
+        mc.make_bucket(bucket_name)
 
 
 @pytest_asyncio.fixture(scope="module", autouse=True)
@@ -182,31 +169,24 @@ async def setup_db():
             session.add_all([task, classroom, work])
             await session.commit()
             await session.aclose()
-
-
+            
             buffer = io.BytesIO("Some usual texts".encode())
             buffer.seek(0, 2)
             size = buffer.tell()
             buffer.seek(0)
-            url = f"http://{os.getenv("MINIO_HOST")}:{os.getenv("MINIO_PORT")}"
-            session_boto = aioboto3.Session()
-            async with session_boto.client(
-                's3',
-                endpoint_url=url,  # Для MinIO
-                aws_access_key_id=os.getenv("MINIO_USER"),
-                aws_secret_access_key=os.getenv("MINIO_PASSWORD"),
-                region_name='us-east-1'
-            ) as s3:
+
+            async with get_boto_client() as s3:
                 await s3.upload_fileobj(
                     buffer,
-                    "comment",
-                    os.getenv("MINIO_PASSWORD")
+                    settings.MINIO_BUCKET,
+                    f"{student_answer_file_id}/simple.txt"
                 )
+                print(settings.MINIO_BUCKET)
+            
             file_orm = Files(
                 id=student_answer_file_id,
                 user_id=student_id,
                 filename="simple.txt",
-                bucket="comment",
                 original_size=size,
                 original_mime=".txt",
             )

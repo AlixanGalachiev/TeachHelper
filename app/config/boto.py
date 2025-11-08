@@ -1,6 +1,10 @@
 import aioboto3
 import os
+from contextlib import asynccontextmanager
 from minio import Minio
+from app.config.config_app import settings
+from dotenv import load_dotenv
+load_dotenv()
 
 mc = Minio(
     "localhost:9000",
@@ -9,17 +13,15 @@ mc = Minio(
     secure=False  # Для HTTP (не HTTPS)
 )
 
-buckets = ["answers", "comments", "tasks"]
-
-for bucket in buckets:
-    found = mc.bucket_exists(bucket)
-    if not found:
-        mc.make_bucket(bucket)
-
-
+# Создаем единый bucket для всех файлов
+bucket_name = settings.MINIO_BUCKET
+print(bucket_name)
+found = mc.bucket_exists(bucket_name)
+if not found:
+    mc.make_bucket(bucket_name)
 
 
-
+@asynccontextmanager
 async def get_boto_client():
     url = f"http://{os.getenv("MINIO_HOST")}:{os.getenv("MINIO_PORT")}"
     session = aioboto3.Session()

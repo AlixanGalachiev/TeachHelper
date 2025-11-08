@@ -6,10 +6,12 @@ from fastapi.responses import JSONResponse
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.config.boto import get_boto_client
+from app.config.config_app import settings
 from app.exceptions.exceptions import *
 from app.models.model_files import Files
 from app.models.model_users import RoleUser, Users
 from app.schemas.schema_files import FileSchema
+from app.utils.file_validation import validate_files
 
 
 class ServiceFiles:
@@ -17,24 +19,28 @@ class ServiceFiles:
         self.session = session
 
 
-    async def create(self, bucket: str, files: list[UploadFile], user: Users):
+    async def create(self, files: list[UploadFile], user: Users):
         try:
-            s3 = get_boto_client()
-            files_orm = []
-            for file in files:
-                id = uuid.uuid4()
-                await s3.upload_fileobj(file.file, bucket, f"{id}/{file.filename}")
+            # Валидация файлов перед загрузкой
+            await validate_files(files)
 
-                file_orm = Files(
-                    id=id,
-                    user_id=user.id,
-                    filename=file.filename,
-                    bucket=bucket,
-                    original_size=file.size,
-                    original_mime=file.content_type,
-                )
-                self.session.add(file_orm)
-                files_orm.append(file_orm)
+            bucket = settings.MINIO_BUCKET
+            files_orm = []
+            async with get_boto_client() as s3:
+                for file in files:
+                    file_id = uuid.uuid4()
+                    file_key = f"{file_id}/{file.filename}"
+                    await s3.upload_fileobj(file.file, bucket, file_key)
+
+                    file_orm = Files(
+                        id=file_id,
+                        user_id=user.id,
+                        filename=file.filename,
+                        original_size=file.size,
+                        original_mime=file.content_type,
+                    )
+                    self.session.add(file_orm)
+                    files_orm.append(file_orm)
                     
             await self.session.commit()
             return JSONResponse(
@@ -61,11 +67,12 @@ class ServiceFiles:
             if file.user_id != user.id and user.role is not RoleUser.admin:
                 raise HTTPException(403, "This user have not permission for this operation")
 
-            s3 = get_boto_client()
-            await s3.delete_object(
-                bucket=file.bucket,
-                Key=file.s3_key
-            )
+            file_key = f"{file.id}/{file.filename}"
+            async with get_boto_client() as s3:
+                await s3.delete_object(
+                    Bucket=file.bucket,
+                    Key=file_key
+                )
 
             await self.session.delete(file)
             await self.session.commit()

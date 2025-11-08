@@ -110,12 +110,7 @@ async def create_file(
     user: Users = Depends(get_current_user)
 ):
     service = ServiceFiles(session)
-    return service.create(
-        comment_id,
-        'comments',
-        files,
-        user
-    )
+    return await service.create(files=files, user=user)
 
 
 @router.delete("/{id}/comments/{comment_id}/files/{file_id}")
@@ -127,4 +122,4 @@ async def delete_file(
     user: Users = Depends(get_current_user)
 ):
     service = ServiceFiles(session)
-    return service.delete(file_id, 'comments', user)
+    return await service.delete(file_id=file_id, user=user)

@@ -18,7 +18,6 @@ class FileSchema(BaseModel):
                 "id": uuid.UUID("ecefeaf2-d21d-426f-b415-9ff1dfb4da0a"),
                 "user_id": uuid.UUID("9ca843a9-7163-472c-b67a-8b730567f272"),
                 "filename": "simple.txt",
-                "bucket": "comment",
                 "original_size": "12",
                 "original_mime": ".txt",
             }
