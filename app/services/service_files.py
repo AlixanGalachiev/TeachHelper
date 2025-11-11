@@ -1,25 +1,26 @@
 
+import enum
 import uuid
 
 from fastapi import HTTPException, UploadFile, logger
 from fastapi.responses import JSONResponse
+from sqlalchemy import insert
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.config.boto import get_boto_client
 from app.config.config_app import settings
-from app.exceptions.exceptions import *
-from app.models.model_files import Files
+from app.exceptions.responses import *
+from app.models.model_files import FileEntity, Files
 from app.models.model_users import RoleUser, Users
 from app.schemas.schema_files import FileSchema
 from app.utils.file_validation import validate_files
+from app.services.service_base import ServiceBase
 
 
-class ServiceFiles:
-    def __init__(self, session: AsyncSession):
-        self.session = session
 
+class ServiceFiles(ServiceBase):
 
-    async def create(self, files: list[UploadFile], user: Users):
+    async def create(self, entity: FileEntity, entity_id: uuid.UUID, files: list[UploadFile], user: Users):
         try:
             # Валидация файлов перед загрузкой
             await validate_files(files)
@@ -40,6 +41,12 @@ class ServiceFiles:
                         original_mime=file.content_type,
                     )
                     self.session.add(file_orm)
+                    await self.session.execute(
+                        insert(f"{entity.value}s_files")
+                        .values({
+                            "file_id":file_id,
+                            f"{entity.value}_id": entity_id
+                        }))
                     files_orm.append(file_orm)
                     
             await self.session.commit()

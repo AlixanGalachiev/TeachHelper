@@ -13,11 +13,16 @@ class StatusWork(str, enum.Enum):
     verificated  = "verificated"
     canceled     = "canceled"
 
-class Assessment(Base):
+class Assessments(Base):
     id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, index=True, default=uuid.uuid4)
     answer_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), ForeignKey("answers.id", ondelete="CASCADE"), nullable=False)
-    e_criterion_id:  Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), ForeignKey("e_criterions.id", ondelete="CASCADE"), nullable=False)
+    e_criterion_id:  Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), ForeignKey("criterions.id", ondelete="CASCADE"), nullable=False)
     points: Mapped[int] = mapped_column(Integer, default=False, nullable=False)
+
+    criterion: Mapped["Criterions"] = relationship(
+        "Criterions",
+        backref='assessment'
+    )
 
 
 class Answers(Base):
@@ -34,7 +39,7 @@ class Answers(Base):
 
     exercise: Mapped["Exercises"] = relationship("Exercises", backref="answer")
     work: Mapped["Works"] = relationship("Works", back_populates="answers")
-    criterions: Mapped[list["Assessment"]] = relationship(
+    criterions: Mapped[list["Assessments"]] = relationship(
         "ACriterions",
         backref="answer",
         cascade="all, delete-orphan",

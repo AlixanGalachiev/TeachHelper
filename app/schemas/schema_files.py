@@ -7,7 +7,6 @@ class FileSchema(BaseModel):
     id: uuid.UUID
     user_id: uuid.UUID
     filename: str
-    bucket: str
     original_size: int
     original_mime: str
 

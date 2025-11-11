@@ -15,10 +15,11 @@ from app.utils.oAuth import create_access_token, decode_token
 from app.utils.password import verify_password, get_password_hash
 from fastapi.security import OAuth2PasswordRequestForm
 from app.services.service_mail import ServiceMail
+from app.services.service_base import ServiceBase
 
-class ServiceAuth:
+class ServiceAuth(ServiceBase):
     def __init__(self, session: AsyncSession):
-        self.session = session
+        super().__init__(session)
         self.mail = ServiceMail()
 
 

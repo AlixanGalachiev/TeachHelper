@@ -4,17 +4,16 @@ from fastapi.responses import JSONResponse
 from sqlalchemy.orm import joinedload
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.exceptions.exceptions import *
+from app.exceptions.responses import *
 from app.config.boto import get_boto_client
 from app.config.config_app import settings
 from app.models.model_comments import Comments
 from app.models.model_users import RoleUser, Users
 from app.schemas.schema_comment import CommentCreate, CommentUpdate
 from app.utils.logger import logger
+from app.services.service_base import ServiceBase
 
-class ServiceComments():
-    def __init__(self, session: AsyncSession):
-        self.session = session
+class ServiceComments(ServiceBase):
 
     async def create(self, data: CommentCreate, user: Users):
         try:

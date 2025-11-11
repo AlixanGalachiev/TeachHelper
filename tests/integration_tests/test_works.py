@@ -6,7 +6,7 @@ import pytest_asyncio
 
 from app.config.config_app import settings
 from app.db import AsyncSessionLocal
-from app.models.model_tasks import ECriterions, Exercises, Tasks
+from app.models.model_tasks import Criterions, Exercises, Tasks
 from app.models.model_users import Users
 from app.models.model_works import StatusWork
 from app.services.service_work import WorkUpdate
@@ -71,7 +71,7 @@ async def setup_test_works(subject_id, teacher_id):
                     description="Очень важно",
                     order_index=1,
                     criterions=[
-                        ECriterions(
+                        Criterions(
                             id=local_e_criterion_id,
                             name="Посчитал до 10",
                             score=1
@@ -407,19 +407,22 @@ async def test_send_work_errors(
 # )
 # async def test_update_success
 # Учитель в работе может обновлять критерии, создавать комментарии, изменять статус работы
-# Ученик в работе может менять статус работы, менять файлы в ответах(с дз), 
+# Ученик в работе может менять статус работы, менять файлы в ответах(с дз)
+# Написать разные routers на сущности, отдельно обновлять answers, comments, criterions
 @pytest.mark.asyncio
-async def test_update_success(client, session_token_student, work_id, update_data):
-    # print(update_data)
-    # FileSchema(
-    #     "id": uuid.UUID("ecefeaf2-d21d-426f-b415-9ff1dfb4da0a"),
-    #     "user_id": student_id,
-    #     "filename": "simple.txt",
-    #     "bucket": "comment",
-    #     "original_size": "12",
-    #     "original_mime": ".txt",
-    # )
-    update_data.answers[0].files = 'fileeeeeeeeeeeeeee'
+async def test_update_success(client, student_id, session_token_student, work_id, update_data):
+    fileDTO = FileSchema.model_validate(
+        {
+            "id": uuid.UUID("ecefeaf2-d21d-426f-b415-9ff1dfb4da0a"),
+            "user_id": student_id,
+            "filename": "simple.txt",
+            "bucket": "comment",
+            "original_size": "12",
+            "original_mime": ".txt",
+        }
+    )
+
+    update_data.answers[0].files.append(fileDTO)
     response = await client.put(
         f"/works/{work_id}",
         headers={"Authorization": session_token_student},
@@ -427,12 +430,23 @@ async def test_update_success(client, session_token_student, work_id, update_dat
     )
     assert response.status_code == 200
     assert response.json()['id'] == str(work_id)
-    assert response.json()['answers'][0]["files"] == "fileeeeeeeeeeeeeee"
+    response_file = response.json()['answers'][0]["files"][0]
+    assert response_file["user_id"] == str(fileDTO.user_id)
 
 
 @pytest.mark.asyncio
-async def test_update_user_is_teacher(client, session_token_teacher, work_id, update_data):
-    update_data.answers[0].files = 'fileeeeeeeeeeeeeee'
+async def test_update_user_is_teacher(client, teacher_id, session_token_teacher, work_id, update_data):
+    fileDTO = FileSchema.model_validate(
+        {    
+            "id": uuid.UUID("ecefeaf2-d21d-426f-b415-9ff1dfb4da0a"),
+            "user_id": teacher_id,
+            "filename": "simple.txt",
+            "bucket": "comment",
+            "original_size": "12",
+            "original_mime": ".txt",
+        }
+    )
+    update_data.answers[0].files.append(fileDTO)
     response = await client.put(
         f"/works/{work_id}",
         headers={"Authorization": session_token_teacher},

@@ -1,4 +1,3 @@
-from datetime import datetime
 from fastapi import HTTPException, status
 import uuid
 from fastapi.responses import JSONResponse
@@ -6,92 +5,26 @@ from sqlalchemy import select
 from sqlalchemy.orm import selectinload
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.exceptions.exceptions import ErrorPermissionDenied, ErrorRolePermissionDenied
+from app.exceptions.responses import ErrorNotExists, ErrorPermissionDenied, ErrorRolePermissionDenied
+from app.models.model_files import Files
 from app.models.model_tasks import Exercises, Tasks
 from app.models.model_users import  RoleUser, Users, teachers_students
-from app.models.model_works import ACriterions, Answers, StatusWork, Works
+from app.models.model_works import Assessments, Answers, StatusWork, Works
 from app.repositories.repo_task import RepoTasks
 from app.schemas.schema_files import FileSchema
 from app.schemas.schema_tasks import SchemaTask
-from app.schemas.schema_work import WorkAllFilters
+from app.schemas.schema_work import WorkAllFilters, WorkEasyRead, WorkRead, WorkUpdate
 from app.utils.logger import logger
 from pydantic import BaseModel
 
 from app.repositories.repo_work import RepoWorks
-
-
-class ACriterionBase(BaseModel):
-    answer_id:             uuid.UUID
-    exercise_criterion_id: uuid.UUID
-
-class ACriterionRead(BaseModel):
-    id:        uuid.UUID
-    completed: bool
-
-    model_config = {
-        "from_attributes": True,
-    }
-
-
-class ACriterionUpdate(BaseModel):
-    id:        uuid.UUID|None = None
-    completed: bool|None = None
+from app.services.service_base import ServiceBase
 
 
 
-class AnswerBase(BaseModel):
-    work_id:     uuid.UUID
-    exercise_id: uuid.UUID
-    files:       list[FileSchema]
-
-class AnswerRead(AnswerBase):
-    id:          uuid.UUID
-    criterions:  list[ACriterionRead]
-
-    model_config = {
-        "from_attributes": True,
-    }
-
-class AnswerUpdate(AnswerBase):
-    id:          uuid.UUID|None = None
-    criterions: list[ACriterionUpdate]
 
 
-class WorkBase(BaseModel):
-    task_id:     uuid.UUID
-    student_id:  uuid.UUID
-    finish_date: datetime|None = None
-    status:      StatusWork
-
-class WorkRead(WorkBase):
-    id: uuid.UUID
-    answers: list[AnswerRead]
-
-    model_config = {
-        "from_attributes": True,
-    }
-
-class WorkUpdate(WorkRead):
-    answers: list[AnswerUpdate]
-
-class WorkEasyRead(BaseModel):
-    id: uuid.UUID
-    task_name: str
-    student_name: str
-    score: int
-    max_score: int
-    percent: int
-    status_work: StatusWork
-
-    model_config = {
-        "from_attributes": True,
-    }
-
-
-
-class ServiceWork:
-    def __init__(self, session: AsyncSession):
-        self.session = session
+class ServiceWork(ServiceBase):
 
 
     async def create_works(
@@ -110,7 +43,7 @@ class ServiceWork:
 
             repo = RepoTasks(self.session)
             task_db = await repo.get(task_id)
-            print("service")
+
             if task_db is None:
                 raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Task not found")
 
@@ -163,7 +96,7 @@ class ServiceWork:
                     .selectinload(Exercises.criterions)
                 )
             )
-            response = await self.session.execute(stmt)
+            response = await self.session.execute(stmt) 
             task_db = response.scalars().first()
 
             return JSONResponse(
@@ -239,47 +172,102 @@ class ServiceWork:
             raise HTTPException(status_code=500, detail="Internal Server Error")
 
 
-    async def update(self, work_id: uuid.UUID, work_data: WorkUpdate, user: Users):
+
+# draft        = "draft" -- изначально
+# inProgress   = "inProgress" -- после того как студент открыл
+# verification = "verification" -- после того как студент отправил
+# verificated  = "verificated" -- после того как учитель проверил
+# canceled     = "canceled" -- после того как учитель отменил задание
+
+    async def update(
+        self,
+        work_id: uuid.UUID,
+        status: StatusWork,
+        conclusion: str | None,
+        user: Users
+    ):
         try:
-            if user.role is RoleUser.teacher:
-                raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="User don't have permission to delete this work")
-
-            if work_id != work_data.id:
-                raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="Work data id must match with work_id")
-
-            work_db = await self.session.get(Works, work_id)
-            if work_db is None:
-                raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Work not exists")
-            
-            answers = []
-            for answer in work_data.answers:
-                criterions_orm = [
-                    ACriterions(**criterion.model_dump())
-                    for criterion in answer.criterions
-                ]
-                
-                answer_orm = Answers(**answer.model_dump(exclude={"criterions"}))
-                answer_orm.criterions = criterions_orm
-                answers.append(answer_orm)
-
-            work = Works(**work_data.model_dump(exclude={"answers"}))
-            work.answers = answers
-            await self.session.merge(work)
-            await self.session.commit()
-            
-            stmt = (
-                select(Works)
-                .where(Works.id==work_id)
-                .options(
-                    selectinload(Works.answers)
-                    .selectinload(Answers.criterions)
-                )
+            # Получаем работу с загрузкой связанной задачи (для проверки teacher_id)
+            work_db = await self.session.get(
+                Works,
+                work_id,
+                options=[selectinload(Works.task)]
             )
-            response = await self.session.execute(stmt)
-            rows = response.scalars().first()
-            return WorkRead.model_validate(rows).model_dump(mode="json")
+            
+            if not work_db:
+                raise ErrorNotExists(Works)
+            
+            # Словарь приоритетов статусов
+            work_status_weight = {
+                "draft": 0,
+                "inProgress": 1,
+                "verification": 2,
+                "verificated": 3,
+                "canceled": 4,
+            }
+            
+            current_weight = work_status_weight[work_db.status.value]
+            new_weight = work_status_weight[status.value]
+            
 
-        except HTTPException as exc:
+            # Проверка: статус можно только повышать (или оставлять текущий)
+            if new_weight < current_weight:
+                raise HTTPException(
+                    status_code=400,
+                    detail="Status can only be increased or kept the same, not decreased"
+                )
+
+            if user.role == RoleUser.student:
+                # Ученик может:
+                # - переводить из draft → inProgress
+                # - переводить из inProgress → verification
+                # - НЕ может устанавливать conclusion
+                if current_weight > 1:
+                    raise HTTPException(
+                        status_code=403,
+                        detail="Student cannot update work with status beyond 'inProgress'"
+                    )
+                
+                if new_weight not in (1, 2):  # только inProgress или verification
+                    raise HTTPException(
+                        status_code=400,
+                        detail="Student can only set status to 'inProgress' or 'verification'"
+                    )
+                    
+                if conclusion is not None:
+                    raise HTTPException(
+                        status_code=400,
+                        detail="Student cannot set conclusion"
+                    )
+
+            elif user.role == RoleUser.teacher:
+                # Учитель может:
+                # - переводить из verification → verificated
+                # - переводить в canceled из любого статуса
+                # - устанавливать conclusion
+                if (new_weight == 3 and current_weight != 2):  # verificated только после verification
+                    raise HTTPException(
+                        status_code=400,
+                        detail="Teacher can set 'verificated' only after 'verification'"
+                    )
+                    
+                if new_weight == 4:  # canceled можно из любого статуса
+                    pass  # разрешено
+
+            else:
+                raise HTTPException(status_code=403, detail="Unauthorized role")
+
+            # Применяем изменения
+            work_db.status = status
+            if conclusion is not None:
+                work_db.conclusion = conclusion
+
+
+            await self.session.commit()
+            return Success()
+
+        except HTTPException:
+            await self.session.rollback()
             raise
 
         except Exception as exc:
@@ -287,32 +275,6 @@ class ServiceWork:
             await self.session.rollback()
             raise HTTPException(status_code=500, detail="Internal Server Error")
 
-
-    # async def delete(self, work_id: uuid.UUID, user: Users):
-    #     try:
-    #         if user.role is RoleUser.student:
-    #             raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="User don't have permission to delete this task")
-
-    #         work_db = await self.session.get(Works, work_id)
-    #         if work_db in None:
-    #             raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Work not exists")
-
-    #         await self.session.delete(work_db)
-    #         await self.session.commit()
-
-    #         return JSONResponse(
-    #             content={"status": "ok"},
-    #             status_code=status.HTTP_200_OK
-    #         )
-           
-            
-    #     except HTTPException as exc:
-    #         raise
-        
-    #     except Exception as exc:
-    #         logger.exception(exc)
-    #         await self.session.rollback()
-    #         raise HTTPException(status_code=500, detail="Internal Server Error")
 
 def rows_to_easy_read(rows):
     work_list = []

@@ -7,10 +7,9 @@ from app.models.model_classroom import Classrooms
 from app.repositories.repo_classrooms import RepoClassroom
 from app.repositories.repo_teacher import RepoTeacher
 from app.utils.logger import logger
+from app.services.service_base import ServiceBase
 
-class ServiceClassroom:
-    def __init__(self, session: AsyncSession):
-        self.session = session
+class ServiceClassroom(ServiceBase):
 
 
     async def create(self, name: str, teacher):

@@ -9,14 +9,13 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.repositories.repo_task import RepoTasks
 from app.schemas.schema_tasks import TaskCreate, SchemaTask, TasksFilters, TasksReadEasy
-from app.models.model_tasks import  ECriterions, Exercises, Tasks
+from app.models.model_tasks import  Criterions, Exercises, Tasks
 
 from app.models.model_users import RoleUser, Users
 from app.utils.logger import logger
+from app.services.service_base import ServiceBase
 
-class ServiceTasks:
-    def __init__(self, session: AsyncSession):
-        self.session = session
+class ServiceTasks(ServiceBase):
 
     async def create(self, teacher: Users, data: TaskCreate) -> SchemaTask:
         try:
@@ -38,7 +37,7 @@ class ServiceTasks:
                 )
 
                 for cr_data in ex_data.criterions:
-                    criterion = ECriterions(
+                    criterion = Criterions(
                         name=cr_data.name,
                         score=cr_data.score,
                     )
@@ -122,7 +121,7 @@ class ServiceTasks:
             exercises_orm = []
             for exercise_data in update_data.exercises:
                 criterions_orm = [
-                    ECriterions(**criterion.model_dump())
+                    Criterions(**criterion.model_dump())
                     for criterion in exercise_data.criterions
                 ]
 

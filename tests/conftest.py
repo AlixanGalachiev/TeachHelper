@@ -2,7 +2,6 @@ import io
 import os
 import uuid
 
-import aioboto3
 from minio import Minio
 import pytest_asyncio
 from sqlalchemy import insert
@@ -10,9 +9,9 @@ from sqlalchemy import insert
 from app.config.boto import get_boto_client
 from app.models.model_classroom import Classrooms
 from app.models.model_files import Files
-from app.models.model_tasks import ECriterions, Exercises, Subjects, Tasks
+from app.models.model_tasks import Criterions, Exercises, Subjects, Tasks
 from app.models.model_users import Users, teachers_students
-from app.models.model_works import ACriterions, Answers, Works, answers_files
+from app.models.model_works import Assessments, Answers, Works, answers_files
 from app.utils.oAuth import create_access_token
 
 os.environ["ENV_FILE"] = ".env_test" #важно, если оно будет после импорта app переменная не подбросится и тесты снесут бой :)
@@ -136,7 +135,7 @@ async def setup_db():
                         description="Очень важно",
                         order_index=1,
                         criterions=[
-                            ECriterions(
+                            Criterions(
                                 id=e_criterion_id,
                                 name="Посчитал до 10",
                                 score=1
@@ -157,7 +156,7 @@ async def setup_db():
                         id=answer_id,
                         exercise_id=exercise_id,
                         criterions = [
-                            ACriterions(
+                            Assessments(
                                 id=a_criterion_id,
                                 e_criterion_id=e_criterion_id,
                             )
@@ -181,7 +180,6 @@ async def setup_db():
                     settings.MINIO_BUCKET,
                     f"{student_answer_file_id}/simple.txt"
                 )
-                print(settings.MINIO_BUCKET)
             
             file_orm = Files(
                 id=student_answer_file_id,

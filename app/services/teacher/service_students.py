@@ -8,15 +8,14 @@ from app.repositories.repo_classrooms import RepoClassroom
 from app.repositories.repo_user import RepoUser
 from app.repositories.teacher.repo_students import RepoStudents
 
-from app.exceptions.exceptions import ErrorRolePermissionDenied
+from app.exceptions.responses import ErrorRolePermissionDenied
 from app.utils.logger import logger
+from app.services.service_base import ServiceBase
 
 
 
 
-class ServiceStudents:
-    def __init__(self, session: AsyncSession):
-        self.session = session
+class ServiceStudents(ServiceBase):
 
 
     async def get_all(self, user: Users):

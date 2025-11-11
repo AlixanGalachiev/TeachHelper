@@ -6,7 +6,7 @@ from sqlalchemy import select
 from sqlalchemy.orm import selectinload
 
 from app.config.config_app import settings
-from app.models.model_tasks import ECriterions, Exercises, Tasks
+from app.models.model_tasks import Criterions, Exercises, Tasks
 from app.models.model_users import Users
 from app.schemas.schema_tasks import ExerciseCreate, ExerciseCriterionCreate, TaskCreate, SchemaTask, TasksReadEasy
 from app.utils.oAuth import create_access_token

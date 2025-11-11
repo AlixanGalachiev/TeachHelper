@@ -5,7 +5,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import joinedload, selectinload
 
 from app.models.model_tasks import Exercises, Tasks
-from app.models.model_works import ACriterions, Answers, Works
+from app.models.model_works import Assessments, Answers, Works
 from app.schemas.schema_tasks import SchemaTask
 from app.utils.logger import logger
 
@@ -54,10 +54,10 @@ class RepoTasks():
                     answer = Answers(id=uuid.uuid4(), work_id=work.id, exercise_id=exercise.id)
                     all_answers.append(answer)
 
-                    # Создаем ACriterions для этого Answer
+                    # Создаем Assessments для этого Answer
                     if hasattr(exercise, 'criterions') and exercise.criterions:
                         a_criterions = [
-                            ACriterions(
+                            Assessments(
                                 answer_id=answer.id, 
                                 e_criterion_id=e_criterion.id
                             ) 

@@ -9,10 +9,9 @@ from app.models.model_tasks import Subjects
 from app.models.model_users import RoleUser, Users
 from app.schemas.schema_subjects import SubjectRead
 from app.utils.logger import logger
+from app.services.service_base import ServiceBase
 
-class ServiceSubjects:
-    def __init__(self, session: AsyncSession):
-        self.session = session
+class ServiceSubjects(ServiceBase):
 
     async def create(self, name: str, user: Users):
         try:
