@@ -5,3 +5,4 @@ from .model_works import *
 from .model_classroom import *
 from .model_comments import *
 from .model_files import *
+from .model_files import *

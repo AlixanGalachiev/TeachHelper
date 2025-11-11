@@ -6,14 +6,6 @@ from sqlalchemy import UUID, Column, ForeignKey, Integer, String, Table
 from app.models.base import Base
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
-comments_files = Table(
-    "comments_files",
-    Base.metadata,
-    Column("id", UUID(as_uuid=True)),
-    Column("file_id", ForeignKey("files.id", ondelete="CASCADE"), nullable=False),
-    Column("comment_id", ForeignKey("comments.id"), nullable=False)
-)
-
 
 class Comments(Base):
     id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, index=True, default=uuid.uuid4)

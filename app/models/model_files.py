@@ -1,13 +1,55 @@
+import enum
 import uuid
 import asyncio
 
-from sqlalchemy import event
+from sqlalchemy import Column, Table, event
 from sqlalchemy.orm import Mapped, mapped_column
 from sqlalchemy import UUID, ForeignKey, Integer, String
 
 from app.config.boto import get_boto_client
+from app.config.config_app import settings
 from app.utils.logger import logger
 from app.models.base import Base
+
+class FileEntity(enum.Enum):
+    answer = "answer"
+    comment = "comment"
+    work = "work"
+    task = "task"
+    exercise = "exercise"
+
+comments_files = Table(
+    "comments_files",
+    Base.metadata,
+    Column[uuid.UUID]("id", UUID(as_uuid=True)),
+    Column[uuid.UUID]("file_id", ForeignKey("files.id", ondelete="CASCADE"), nullable=False),
+    Column[uuid.UUID]("comment_id", ForeignKey("comments.id"), nullable=False)
+)
+
+answers_files = Table(
+    "answers_files",
+    Base.metadata,
+    Column("id", UUID(as_uuid=True)),
+    Column("file_id", ForeignKey("files.id", ondelete="CASCADE"), nullable=False),
+    Column("answer_id", ForeignKey("answers.id"), nullable=False)
+)
+
+tasks_files = Table(
+    "tasks_files",
+    Base.metadata,
+    Column("id", UUID(as_uuid=True)),
+    Column("file_id", ForeignKey("files.id", ondelete="CASCADE"), nullable=False),
+    Column("task_id", ForeignKey("tasks.id"), nullable=False)
+)
+
+exercises_files = Table(
+    "exercises_files",
+    Base.metadata,
+    Column("id", UUID(as_uuid=True)),
+    Column("file_id", ForeignKey("files.id", ondelete="CASCADE"), nullable=False),
+    Column("exercise_id", ForeignKey("exercises.id"), nullable=False)
+)
+
 
 
 class Files(Base):

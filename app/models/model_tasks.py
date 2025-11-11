@@ -6,7 +6,7 @@ from app.models.base import Base
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 # Можно сделать так, чтобы учитель сам заполнял критерии, можно сделать так, чтобы критерии были из ЕГЭ
-class ECriterions(Base):
+class Criterions(Base):
     __tablename__="e_criterions"
     id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, index=True, default=uuid.uuid4)
 
@@ -22,11 +22,17 @@ class Exercises(Base):
     description: Mapped[str] = mapped_column(String())
     order_index: Mapped[int] = mapped_column(Integer, nullable=False)
 
-    criterions: Mapped[list["ECriterions"]] = relationship(
-        "ECriterions",
+    criterions: Mapped[list["Criterions"]] = relationship(
+        "Criterions",
         backref="exercise",
         cascade="all, delete-orphan",
         passive_deletes=True,
+    )
+
+    files: Mapped[list["Files"]] = relationship(
+        "Files",
+        secondary="exercises_files",
+        backref="answer",
     )
 
 class Tasks(Base):
@@ -53,6 +59,12 @@ class Tasks(Base):
         backref="task",
         cascade="all, delete-orphan",
         passive_deletes=True,
+    )
+
+    files: Mapped[list["Files"]] = relationship(
+        "Files",
+        secondary="tasks_files",
+        backref="answer",
     )
 
 
