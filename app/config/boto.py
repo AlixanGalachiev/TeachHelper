@@ -15,7 +15,7 @@ mc = Minio(
 
 # Создаем единый bucket для всех файлов
 bucket_name = settings.MINIO_BUCKET
-print(bucket_name)
+
 found = mc.bucket_exists(bucket_name)
 if not found:
     mc.make_bucket(bucket_name)

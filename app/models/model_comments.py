@@ -11,7 +11,7 @@ class Comments(Base):
     id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, index=True, default=uuid.uuid4)
     answer_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), ForeignKey("answers.id", ondelete="CASCADE"), nullable=False)
     description: Mapped[str] = mapped_column(String, nullable=False, default="")
-    type_id: Mapped[int] = mapped_column(Integer, ForeignKey("comment_types.id"), nullable=False)
+    type_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), ForeignKey("comment_types.id"), nullable=False)
 
     files: Mapped[list["Files"]] = relationship(
         "Files",
@@ -22,6 +22,6 @@ class Comments(Base):
 
 class CommentTypes(Base):
     __tablename__="comment_types"
-    id: Mapped[int] = mapped_column(Integer, primary_key=True, index=True, default=uuid.uuid4)
+    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, index=True, default=uuid.uuid4)
     short_name: Mapped[str] = mapped_column(String(10), nullable=False)
     name: Mapped[str] = mapped_column(String(50), nullable=False)

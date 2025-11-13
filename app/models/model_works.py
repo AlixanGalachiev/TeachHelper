@@ -16,7 +16,7 @@ class StatusWork(str, enum.Enum):
 class Assessments(Base):
     id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, index=True, default=uuid.uuid4)
     answer_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), ForeignKey("answers.id", ondelete="CASCADE"), nullable=False)
-    e_criterion_id:  Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), ForeignKey("criterions.id", ondelete="CASCADE"), nullable=False)
+    criterion_id:  Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), ForeignKey("criterions.id", ondelete="CASCADE"), nullable=False)
     points: Mapped[int] = mapped_column(Integer, default=False, nullable=False)
 
     criterion: Mapped["Criterions"] = relationship(
