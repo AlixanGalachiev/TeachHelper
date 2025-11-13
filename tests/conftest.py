@@ -8,10 +8,11 @@ from sqlalchemy import insert
 
 from app.config.boto import get_boto_client
 from app.models.model_classroom import Classrooms
-from app.models.model_files import Files
-from app.models.model_tasks import Criterions, Exercises, Subjects, Tasks
+from app.models.model_files import Files, answers_files
+from app.models.model_subjects import Subjects
+from app.models.model_tasks import Criterions, Exercises, Tasks
 from app.models.model_users import Users, teachers_students
-from app.models.model_works import Assessments, Answers, Works, answers_files
+from app.models.model_works import Assessments, Answers, Works
 from app.utils.oAuth import create_access_token
 
 os.environ["ENV_FILE"] = ".env_test" #важно, если оно будет после импорта app переменная не подбросится и тесты снесут бой :)
@@ -60,10 +61,10 @@ async def setup_db():
         classroom_id=uuid.UUID("345a10c2-78a4-418c-85ac-b230e9f1f1ba")
         task_id=uuid.UUID("7bd1af64-ccb7-448b-bb9e-943b6aaa590b")
         exercise_id=uuid.UUID("c98ac0ab-69df-4c28-bd81-d255977e7097")
-        e_criterion_id=uuid.UUID("0204821c-9d78-442f-a59c-7d85397eb52f")
+        criterion_id=uuid.UUID("0204821c-9d78-442f-a59c-7d85397eb52f")
         work_id=uuid.UUID("48fd40b4-3d01-4ad3-998e-2338dbacd376")
         answer_id=uuid.UUID("d5c8edc9-c427-4bb3-af6a-367f0bf49e16")
-        a_criterion_id=uuid.UUID("d1a6db6f-2b6a-4cfe-95c0-6c512a9ab953")
+        assessment_id=uuid.UUID("d1a6db6f-2b6a-4cfe-95c0-6c512a9ab953")
         student_answer_file_id=uuid.UUID("ecefeaf2-d21d-426f-b415-9ff1dfb4da0a")
 
 
@@ -136,7 +137,7 @@ async def setup_db():
                         order_index=1,
                         criterions=[
                             Criterions(
-                                id=e_criterion_id,
+                                id=criterion_id,
                                 name="Посчитал до 10",
                                 score=1
                             )
@@ -155,10 +156,10 @@ async def setup_db():
                     Answers(
                         id=answer_id,
                         exercise_id=exercise_id,
-                        criterions = [
+                        assessments = [
                             Assessments(
-                                id=a_criterion_id,
-                                e_criterion_id=e_criterion_id,
+                                id=assessment_id,
+                                criterion_id=criterion_id,
                             )
                         ]
                     )
@@ -208,10 +209,10 @@ async def setup_db():
             "classroom_id": classroom_id,
             "task_id": task_id,
             "exercise_id": exercise_id,
-            "e_criterion_id": e_criterion_id,
+            "criterion_id": criterion_id,
             "work_id": work_id,
             "answer_id": answer_id,
-            "a_criterion_id": a_criterion_id,
+            "assessment_id": assessment_id,
         }
 
 

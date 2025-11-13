@@ -31,7 +31,7 @@ class Exercises(Base):
     files: Mapped[list["Files"]] = relationship(
         "Files",
         secondary="exercises_files",
-        backref="answer",
+        backref="exercise",
     )
 
 class Tasks(Base):
@@ -63,7 +63,7 @@ class Tasks(Base):
     files: Mapped[list["Files"]] = relationship(
         "Files",
         secondary="tasks_files",
-        backref="answer",
+        backref="task",
     )
 
 

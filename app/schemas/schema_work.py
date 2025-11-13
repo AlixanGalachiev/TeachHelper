@@ -14,22 +14,22 @@ class WorkAllFilters(BaseModel):
     classrooms_ids: list[uuid.UUID]|None = None
     status_work: StatusWork|None = None
 
-class ACriterionBase(BaseModel):
-    answer_id:             uuid.UUID
-    exercise_criterion_id: uuid.UUID
+class AssessmentBase(BaseModel):
+    answer_id:    uuid.UUID
+    criterion_id: uuid.UUID
 
-class ACriterionRead(BaseModel):
+class AssessmentRead(BaseModel):
     id:        uuid.UUID
-    completed: bool
+    points: int
 
     model_config = {
         "from_attributes": True,
     }
 
 
-class ACriterionUpdate(BaseModel):
+class AssessmentUpdate(BaseModel):
     id:        uuid.UUID|None = None
-    completed: bool|None = None
+    points: int|None = None
 
 
 
@@ -40,7 +40,7 @@ class AnswerBase(BaseModel):
 
 class AnswerRead(AnswerBase):
     id:          uuid.UUID
-    criterions:  list[ACriterionRead]
+    assessments:  list[AssessmentRead]
 
     model_config = {
         "from_attributes": True,
@@ -48,7 +48,7 @@ class AnswerRead(AnswerBase):
 
 class AnswerUpdate(AnswerBase):
     id:          uuid.UUID|None = None
-    criterions: list[ACriterionUpdate]
+    assessments: list[AssessmentUpdate]
 
 
 class WorkBase(BaseModel):

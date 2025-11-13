@@ -66,4 +66,4 @@ async def update(
     user: Users = Depends(get_current_user)
 ):
     service = ServiceWork(session)
-    return await service.update(id)
+    return await service.update(work_id, status, conclusion)

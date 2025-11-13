@@ -19,6 +19,4 @@ class Subjects(Base):
     comment_types: Mapped[list["CommentTypes"]] = relationship(
         "CommentTypes",
         secondary="subjects_comment_types",
-        cascade="all, delete-orphan",
-        passive_deletes=True,
     )

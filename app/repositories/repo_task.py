@@ -59,7 +59,7 @@ class RepoTasks():
                         a_criterions = [
                             Assessments(
                                 answer_id=answer.id, 
-                                e_criterion_id=e_criterion.id
+                                criterion_id=e_criterion.id
                             ) 
                             for e_criterion in exercise.criterions
                         ]

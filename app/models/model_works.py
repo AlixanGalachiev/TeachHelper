@@ -17,7 +17,7 @@ class Assessments(Base):
     id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, index=True, default=uuid.uuid4)
     answer_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), ForeignKey("answers.id", ondelete="CASCADE"), nullable=False)
     criterion_id:  Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), ForeignKey("criterions.id", ondelete="CASCADE"), nullable=False)
-    points: Mapped[int] = mapped_column(Integer, default=False, nullable=False)
+    points: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
 
     criterion: Mapped["Criterions"] = relationship(
         "Criterions",
@@ -29,7 +29,7 @@ class Answers(Base):
     id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, index=True, default=uuid.uuid4)
     work_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), ForeignKey("works.id", ondelete="CASCADE"), nullable=False)
     exercise_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), ForeignKey("exercises.id", ondelete="SET NULL"))
-    general_comment: Mapped[str] = mapped_column(String)
+    general_comment: Mapped[str] = mapped_column(String, default='')
 
     files: Mapped[list["Files"]] = relationship(
         "Files",
@@ -39,8 +39,8 @@ class Answers(Base):
 
     exercise: Mapped["Exercises"] = relationship("Exercises", backref="answer")
     work: Mapped["Works"] = relationship("Works", back_populates="answers")
-    criterions: Mapped[list["Assessments"]] = relationship(
-        "ACriterions",
+    assessments: Mapped[list["Assessments"]] = relationship(
+        "Assessments",
         backref="answer",
         cascade="all, delete-orphan",
         passive_deletes=True,

@@ -5,7 +5,7 @@ from sqlalchemy import select
 from sqlalchemy.orm import selectinload
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.exceptions.responses import ErrorNotExists, ErrorPermissionDenied, ErrorRolePermissionDenied
+from app.exceptions.responses import ErrorNotExists, ErrorPermissionDenied, ErrorRolePermissionDenied, Success
 from app.models.model_files import Files
 from app.models.model_tasks import Exercises, Tasks
 from app.models.model_users import  RoleUser, Users, teachers_students
@@ -77,7 +77,7 @@ class ServiceWork(ServiceBase):
                 .where(Works.id == id)
                 .options(
                     selectinload(Works.answers)
-                    .selectinload(Answers.criterions),
+                    .selectinload(Answers.assessments),
                     selectinload(Works.answers)
                     .selectinload(Answers.files)
                 )

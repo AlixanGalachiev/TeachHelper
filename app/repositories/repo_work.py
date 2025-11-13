@@ -2,7 +2,8 @@ import uuid
 from sqlalchemy import case, func, select
 
 from app.models.model_classroom import Classrooms
-from app.models.model_tasks import Criterions, Tasks, Subjects, Exercises
+from app.models.model_subjects import Subjects
+from app.models.model_tasks import Criterions, Exercises, Tasks
 from app.models.model_users import RoleUser, Users, teachers_students
 from app.models.model_works import Assessments, StatusWork, Works, Answers
 from app.schemas.schema_work import WorkAllFilters
@@ -18,12 +19,6 @@ class RepoWorks():
         
         # Набранный балл: сумма баллов тех критериев Criterions, где Assessments.points - это баллы
         # Используем CASE для условного суммирования
-        current_score_expr = func.sum(
-            case(
-                (Assessments.completed == True, Criterions.score),
-                else_=0
-            )
-        )
         
         # 3. Базовый запрос с JOINs
         stmt = (
@@ -31,7 +26,7 @@ class RepoWorks():
                 Works.id.label("id"),
                 func.concat(Users.first_name, " ", Users.last_name).label("student_name"),
                 Tasks.name.label("task_name"),
-                current_score_expr.label("score"),
+                func.sum(Assessments.points).label("score"),
                 func.sum(Criterions.score).label("max_score"),
                 Works.status.label("status_work")
             )
@@ -41,7 +36,7 @@ class RepoWorks():
             .join(Answers, Works.id == Answers.work_id) 
             .join(Exercises, Answers.exercise_id == Exercises.id)
             .join(Criterions, Exercises.id == Criterions.exercise_id)
-            .join(Assessments, (Answers.id == Assessments.answer_id) & (Criterions.id == Assessments.e_criterion_id))
+            .join(Assessments, (Answers.id == Assessments.answer_id) & (Criterions.id == Assessments.criterion_id))
             .join(Subjects, Tasks.subject_id == Subjects.id, isouter=True)
         )
 
@@ -90,19 +85,13 @@ class RepoWorks():
         subject_id: uuid.UUID|None = None,
         status_work: StatusWork| None = None,
     ):
-        current_score_expr = func.sum(
-            case(
-                (Assessments.completed == True, Criterions.score),
-                else_=0
-            )
-        )
 
         stmt = (
             select(
                 Works.id.label("id"),
                 func.concat(Users.first_name, " ", Users.last_name).label("student_name"),
                 Tasks.name.label("task_name"),
-                current_score_expr.label("score"),
+                func.sum(Assessments.points).label("score"),
                 func.sum(Criterions.score).label("max_score"),
                 Works.status.label("status_work")
             )
@@ -112,7 +101,7 @@ class RepoWorks():
             .join(Answers, Works.id == Answers.work_id) 
             .join(Exercises, Answers.exercise_id == Exercises.id)
             .join(Criterions, Exercises.id == Criterions.exercise_id)
-            .join(Assessments, (Answers.id == Assessments.answer_id) & (Criterions.id == Assessments.e_criterion_id))
+            .join(Assessments, (Answers.id == Assessments.answer_id) & (Criterions.id == Assessments.criterion_id))
             .join(Subjects, Tasks.subject_id == Subjects.id, isouter=True)
         )
 
@@ -149,12 +138,6 @@ class RepoWorks():
         subject_id: uuid.UUID|None = None,
         status_work: StatusWork| None = None,
     ):
-        current_score_expr = func.sum(
-            case(
-                (Assessments.completed == True, Criterions.score),
-                else_=0
-            )
-        )
 
 
         stmt = (
@@ -162,7 +145,7 @@ class RepoWorks():
                 Works.id.label("id"),
                 func.concat(Users.first_name, " ", Users.last_name).label("student_name"),
                 Tasks.name.label("task_name"),
-                current_score_expr.label("score"),
+                func.sum(Assessments.points).label("score"),
                 func.sum(Criterions.score).label("max_score"),
                 Works.status.label("status_work")
             )
@@ -186,7 +169,7 @@ class RepoWorks():
             .join(Answers, Works.id == Answers.work_id) 
             .join(Exercises, Answers.exercise_id == Exercises.id)
             .join(Criterions, Exercises.id == Criterions.exercise_id)
-            .join(Assessments, (Answers.id == Assessments.answer_id) & (Criterions.id == Assessments.e_criterion_id))
+            .join(Assessments, (Answers.id == Assessments.answer_id) & (Criterions.id == Assessments.criterion_id))
         )
 
 

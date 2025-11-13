@@ -5,7 +5,7 @@ from fastapi.responses import JSONResponse
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.models.model_tasks import Subjects
+from app.models.model_subjects import Subjects
 from app.models.model_users import RoleUser, Users
 from app.schemas.schema_subjects import SubjectRead
 from app.utils.logger import logger
