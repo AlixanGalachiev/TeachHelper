@@ -6,8 +6,7 @@ from app.models.base import Base
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 # Можно сделать так, чтобы учитель сам заполнял критерии, можно сделать так, чтобы критерии были из ЕГЭ
-class ECriterions(Base):
-    __tablename__="e_criterions"
+class Criterions(Base):
     id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, index=True, default=uuid.uuid4)
 
     exercise_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), ForeignKey("exercises.id", ondelete="CASCADE"), nullable=False)
@@ -22,11 +21,19 @@ class Exercises(Base):
     description: Mapped[str] = mapped_column(String())
     order_index: Mapped[int] = mapped_column(Integer, nullable=False)
 
-    criterions: Mapped[list["ECriterions"]] = relationship(
-        "ECriterions",
+    criterions: Mapped[list["Criterions"]] = relationship(
+        "Criterions",
         backref="exercise",
         cascade="all, delete-orphan",
         passive_deletes=True,
+    )
+
+    files: Mapped[list["Files"]] = relationship(
+        "Files",
+        secondary="exercises_files",
+        backref="exercise",
+        cascade="all, delete-orphan",
+        single_parent=True
     )
 
 class Tasks(Base):
@@ -55,8 +62,14 @@ class Tasks(Base):
         passive_deletes=True,
     )
 
+    files: Mapped[list["Files"]] = relationship(
+        "Files",
+        secondary="tasks_files",
+        backref="task",
+        cascade="all, delete-orphan",
+        single_parent=True
+
+    )
 
 
-class Subjects(Base):
-    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, index=True, default=uuid.uuid4)
-    name: Mapped[str] = mapped_column(String, nullable=False)
+

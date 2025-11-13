@@ -6,10 +6,13 @@ import pytest_asyncio
 
 from app.config.config_app import settings
 from app.db import AsyncSessionLocal
-from app.models.model_tasks import ECriterions, Exercises, Tasks
+from app.models.model_tasks import Criterions, Exercises, Tasks
 from app.models.model_users import Users
-from app.models.model_works import StatusWork
-from app.services.service_work import WorkUpdate
+from fastapi import HTTPException
+
+from app.models.model_works import StatusWork, Works
+from app.services.service_work import ServiceWork, WorkUpdate
+from app.exceptions.responses import Success
 from app.utils.oAuth import create_access_token
 from app.schemas.schema_files import FileSchema
 
@@ -28,10 +31,12 @@ def update_data():
                     "exercise_id": "c98ac0ab-69df-4c28-bd81-d255977e7097",
                     "files": [],
                     "id": "d5c8edc9-c427-4bb3-af6a-367f0bf49e16",
-                    "criterions": [
+                    "assessments": [
                         {
                             "id": "d1a6db6f-2b6a-4cfe-95c0-6c512a9ab953",
-                            "completed": False
+                            "answer_id": "0204821c-9d78-442f-a59c-7d85397eb52f",
+                            "criterion_id": "d1a6db6f-2b6a-4cfe-95c0-6c512a9ab953",
+                            "points": 0
                         }
                     ]
                 }
@@ -45,7 +50,7 @@ async def setup_test_works(subject_id, teacher_id):
     local_teacher_id = uuid.UUID("9a25a12d-a1ed-4583-a07e-51c592b59d63")
     local_task_id = uuid.UUID("9a25a12d-a1ed-4583-a07e-51c592b59d64")
     local_exercise_id = uuid.UUID("9a25a12d-a1ed-4583-a07e-51c592b59d65")
-    local_e_criterion_id = uuid.UUID("9a25a12d-a1ed-4583-a07e-51c592b59d66")
+    local_criterion_id = uuid.UUID("9a25a12d-a1ed-4583-a07e-51c592b59d66")
     async with AsyncSessionLocal() as session:
         teacher = Users(
                 id=local_teacher_id,
@@ -71,8 +76,8 @@ async def setup_test_works(subject_id, teacher_id):
                     description="Очень важно",
                     order_index=1,
                     criterions=[
-                        ECriterions(
-                            id=local_e_criterion_id,
+                        Criterions(
+                            id=local_criterion_id,
                             name="Посчитал до 10",
                             score=1
                         )
@@ -86,7 +91,7 @@ async def setup_test_works(subject_id, teacher_id):
             "local_teacher_id": local_teacher_id,
             "local_task_id": local_task_id,
             "local_exercise_id": local_exercise_id,
-            "local_e_criterion_id": local_e_criterion_id,
+            "local_criterion_id": local_criterion_id,
         }
 
 @pytest.fixture(scope="module")
@@ -102,8 +107,8 @@ def local_exercise_id(setup_test_works):
     return setup_test_works["local_exercise_id"]
          
 @pytest.fixture(scope="module")
-def local_e_criterion_id(setup_test_works):
-    return setup_test_works["local_e_criterion_id"]
+def local_criterion_id(setup_test_works):
+    return setup_test_works["local_criterion_id"]
 
 @pytest.fixture(scope="module")
 def local_token_teacher():
@@ -407,63 +412,143 @@ async def test_send_work_errors(
 # )
 # async def test_update_success
 # Учитель в работе может обновлять критерии, создавать комментарии, изменять статус работы
-# Ученик в работе может менять статус работы, менять файлы в ответах(с дз), 
+# Ученик в работе может менять статус работы, менять файлы в ответах(с дз)
+# Написать разные routers на сущности, отдельно обновлять answers, comments, criterions
 @pytest.mark.asyncio
-async def test_update_success(client, session_token_student, work_id, update_data):
-    # print(update_data)
-    # FileSchema(
-    #     "id": uuid.UUID("ecefeaf2-d21d-426f-b415-9ff1dfb4da0a"),
-    #     "user_id": student_id,
-    #     "filename": "simple.txt",
-    #     "bucket": "comment",
-    #     "original_size": "12",
-    #     "original_mime": ".txt",
-    # )
-    update_data.answers[0].files = 'fileeeeeeeeeeeeeee'
-    response = await client.put(
-        f"/works/{work_id}",
-        headers={"Authorization": session_token_student},
-        json=update_data.model_dump(mode="json")
-    )
+@pytest.mark.parametrize(
+    "user_role,work_exists,initial_status,new_status,conclusion,expected_status,expected_detail",
+    [
+        ("student", True, StatusWork.draft, StatusWork.inProgress, None, 200, None),
+        ("student", True, StatusWork.inProgress, StatusWork.verification, None, 200, None),
+        (
+            "student",
+            True,
+            StatusWork.verification,
+            StatusWork.inProgress,
+            None,
+            400,
+            "Status can only be increased or kept the same, not decreased",
+        ),
+        (
+            "student",
+            True,
+            StatusWork.verification,
+            StatusWork.verification,
+            None,
+            403,
+            "Student cannot update work with status beyond 'inProgress'",
+        ),
+        (
+            "student",
+            True,
+            StatusWork.draft,
+            StatusWork.verificated,
+            None,
+            400,
+            "Student can only set status to 'inProgress' or 'verification'",
+        ),
+        (
+            "student",
+            True,
+            StatusWork.draft,
+            StatusWork.inProgress,
+            "Need conclusion",
+            400,
+            "Student cannot set conclusion",
+        ),
+        (
+            "teacher",
+            True,
+            StatusWork.verification,
+            StatusWork.verificated,
+            "Work completed",
+            200,
+            None,
+        ),
+        (
+            "teacher",
+            True,
+            StatusWork.inProgress,
+            StatusWork.canceled,
+            None,
+            200,
+            None,
+        ),
+        (
+            "teacher",
+            True,
+            StatusWork.draft,
+            StatusWork.verificated,
+            None,
+            400,
+            "Teacher can set 'verificated' only after 'verification'",
+        ),
+        ("admin", True, StatusWork.draft, StatusWork.inProgress, None, 403, "Unauthorized role"),
+        ("teacher", False, StatusWork.draft, StatusWork.inProgress, None, 404, "This Work, not exists"),
+    ],
+)
+async def test_update_status_rules(
+    request,
+    async_session,
+    work_id,
+    user_role,
+    work_exists,
+    initial_status,
+    new_status,
+    conclusion,
+    expected_status,
+    expected_detail,
+):
+    service = ServiceWork(async_session)  # сервис, чью логику проверяем
+
+    setup_data = request.getfixturevalue("setup_db")  # получаем идентификаторы тестовых пользователей
+    if user_role == "student":
+        user_id = setup_data["student_id"]
+    elif user_role == "teacher":
+        user_id = setup_data["teacher_id"]
+    elif user_role == "admin":
+        user_id = setup_data["admin_id"]
+    else:  # защищаемся от опечаток в параметрах
+        raise ValueError(f"Unsupported user role: {user_role}")
+
+    user = await async_session.get(Users, user_id)  # загружаем пользователя для передачи в сервис
+
+    target_work_id = work_id if work_exists else uuid.uuid4()  # выбираем существующую или искусственную работу
+
+    if work_exists:
+        work = await async_session.get(Works, target_work_id)
+        work.status = initial_status  # устанавливаем начальный статус для проверки переходов
+        work.conclusion = None  # обнуляем заключение перед тестом
+        await async_session.commit()
+        await async_session.refresh(work)
+
+    try:
+        response = await service.update(
+            work_id=target_work_id,
+            status=new_status,
+            conclusion=conclusion,
+            user=user,
+        )
+    except HTTPException as exc:
+        assert exc.status_code == expected_status
+        assert exc.detail == expected_detail
+
+        if work_exists:
+            persisted_work = await async_session.get(Works, target_work_id)
+            await async_session.refresh(persisted_work)  # обновляем данные из базы после отката
+            assert persisted_work.status == initial_status  # статус не меняется при ошибке
+        return
+
+    assert expected_status == 200
+    assert isinstance(response, Success)
     assert response.status_code == 200
-    assert response.json()['id'] == str(work_id)
-    assert response.json()['answers'][0]["files"] == "fileeeeeeeeeeeeeee"
+    assert response.body == b'{"status":"ok"}'
 
+    updated_work = await async_session.get(Works, target_work_id)
+    await async_session.refresh(updated_work)  # убеждаемся, что читаем обновленные данные
+    assert updated_work.status == new_status  # статус обновился согласно запросу
 
-@pytest.mark.asyncio
-async def test_update_user_is_teacher(client, session_token_teacher, work_id, update_data):
-    update_data.answers[0].files = 'fileeeeeeeeeeeeeee'
-    response = await client.put(
-        f"/works/{work_id}",
-        headers={"Authorization": session_token_teacher},
-        json=update_data.model_dump(mode="json")
-    )
-    assert response.status_code == 403
-    assert response.json() == {"detail": "User don't have permission to delete this work"}
-
-
-@pytest.mark.asyncio
-async def test_update_id_not_match(client, session_token_student, update_data):
-    update_data.answers[0].files = 'fileeeeeeeeeeeeeee'
-    response = await client.put(
-        "/works/{345a10c2-78a4-418c-85ac-b230e9f1f2ba}",
-        headers={"Authorization": session_token_student},
-        json=update_data.model_dump(mode="json")
-
-    )
-    assert response.status_code == 409
-    assert response.json() == {'detail': 'Work data id must match with work_id'}
-
-@pytest.mark.asyncio
-async def test_update_not_exists(client, session_token_student, update_data):
-    update_data.answers[0].files = 'fileeeeeeeeeeeeeee'
-    work_id = "345a10c2-78a4-418c-85ac-b230e9f1f2ba"
-    update_data.id = work_id
-    response = await client.put(
-        f"/works/{work_id}",
-        headers={"Authorization": session_token_student},
-        json=update_data.model_dump(mode="json")
-
-    )
-    assert response.status_code == 404
-    assert response.json() == {'detail': 'Work not exists'}
+    if conclusion is None:
+        assert updated_work.conclusion in (None, "")  # для студента заключение остается пустым
+    else:
+        assert updated_work.conclusion == conclusion  # учитель может сохранить заключение

@@ -13,28 +13,36 @@ class StatusWork(str, enum.Enum):
     verificated  = "verificated"
     canceled     = "canceled"
 
-class ACriterions(Base):
+class Assessments(Base):
     id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, index=True, default=uuid.uuid4)
     answer_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), ForeignKey("answers.id", ondelete="CASCADE"), nullable=False)
-    e_criterion_id:  Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), ForeignKey("e_criterions.id", ondelete="CASCADE"), nullable=False)
-    completed: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
+    criterion_id:  Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), ForeignKey("criterions.id", ondelete="CASCADE"), nullable=False)
+    points: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
+
+    criterion: Mapped["Criterions"] = relationship(
+        "Criterions",
+        backref='assessment'
+    )
 
 
 class Answers(Base):
     id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, index=True, default=uuid.uuid4)
     work_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), ForeignKey("works.id", ondelete="CASCADE"), nullable=False)
-    exercise_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), ForeignKey("exercises.id", ondelete="SET NULL"))
+    exercise_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), ForeignKey("exercises.id", ondelete="CASCADE"))
+    general_comment: Mapped[str] = mapped_column(String, default='')
 
     files: Mapped[list["Files"]] = relationship(
         "Files",
         secondary="answers_files",
         backref="answer",
+        cascade="all, delete-orphan",
+        single_parent=True
     )
 
     exercise: Mapped["Exercises"] = relationship("Exercises", backref="answer")
     work: Mapped["Works"] = relationship("Works", back_populates="answers")
-    criterions: Mapped[list["ACriterions"]] = relationship(
-        "ACriterions",
+    assessments: Mapped[list["Assessments"]] = relationship(
+        "Assessments",
         backref="answer",
         cascade="all, delete-orphan",
         passive_deletes=True,
@@ -54,6 +62,7 @@ class Works(Base):
     student_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), ForeignKey("users.id", ondelete="CASCADE"), nullable=False)
     finish_date: Mapped[datetime] = mapped_column(DateTime, nullable=True)
     status: Mapped[StatusWork] = mapped_column(Enum(StatusWork), default=StatusWork.draft, nullable=False)
+    сonclusion: Mapped[str] = mapped_column(String, nullable=True)
 
     answers: Mapped[list["Answers"]] = relationship(
         "Answers",
@@ -64,10 +73,4 @@ class Works(Base):
     )
 
 
-answers_files = Table(
-    "answers_files",
-    Base.metadata,
-    Column("id", UUID(as_uuid=True)),
-    Column("file_id", ForeignKey("files.id", ondelete="CASCADE"), nullable=False),
-    Column("answer_id", ForeignKey("answers.id"), nullable=False)
-)
+

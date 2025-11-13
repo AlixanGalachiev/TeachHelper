@@ -2,9 +2,10 @@ import uuid
 from sqlalchemy import case, func, select
 
 from app.models.model_classroom import Classrooms
-from app.models.model_tasks import ECriterions, Tasks, Subjects, Exercises
+from app.models.model_subjects import Subjects
+from app.models.model_tasks import Criterions, Exercises, Tasks
 from app.models.model_users import RoleUser, Users, teachers_students
-from app.models.model_works import ACriterions, StatusWork, Works, Answers
+from app.models.model_works import Assessments, StatusWork, Works, Answers
 from app.schemas.schema_work import WorkAllFilters
 from app.utils.logger import logger
 
@@ -16,14 +17,8 @@ class RepoWorks():
         # 1. Определяем алиасы для удобства
         # Используем алиас для связей, которые будут использоваться в агрегации
         
-        # Набранный балл: сумма баллов тех критериев ECriterions, где ACriterions.completed == True
+        # Набранный балл: сумма баллов тех критериев Criterions, где Assessments.points - это баллы
         # Используем CASE для условного суммирования
-        current_score_expr = func.sum(
-            case(
-                (ACriterions.completed == True, ECriterions.score),
-                else_=0
-            )
-        )
         
         # 3. Базовый запрос с JOINs
         stmt = (
@@ -31,8 +26,8 @@ class RepoWorks():
                 Works.id.label("id"),
                 func.concat(Users.first_name, " ", Users.last_name).label("student_name"),
                 Tasks.name.label("task_name"),
-                current_score_expr.label("score"),
-                func.sum(ECriterions.score).label("max_score"),
+                func.sum(Assessments.points).label("score"),
+                func.sum(Criterions.score).label("max_score"),
                 Works.status.label("status_work")
             )
             .select_from(Works)
@@ -40,8 +35,8 @@ class RepoWorks():
             .join(Tasks, Works.task_id == Tasks.id)
             .join(Answers, Works.id == Answers.work_id) 
             .join(Exercises, Answers.exercise_id == Exercises.id)
-            .join(ECriterions, Exercises.id == ECriterions.exercise_id)
-            .join(ACriterions, (Answers.id == ACriterions.answer_id) & (ECriterions.id == ACriterions.e_criterion_id))
+            .join(Criterions, Exercises.id == Criterions.exercise_id)
+            .join(Assessments, (Answers.id == Assessments.answer_id) & (Criterions.id == Assessments.criterion_id))
             .join(Subjects, Tasks.subject_id == Subjects.id, isouter=True)
         )
 
@@ -90,20 +85,14 @@ class RepoWorks():
         subject_id: uuid.UUID|None = None,
         status_work: StatusWork| None = None,
     ):
-        current_score_expr = func.sum(
-            case(
-                (ACriterions.completed == True, ECriterions.score),
-                else_=0
-            )
-        )
 
         stmt = (
             select(
                 Works.id.label("id"),
                 func.concat(Users.first_name, " ", Users.last_name).label("student_name"),
                 Tasks.name.label("task_name"),
-                current_score_expr.label("score"),
-                func.sum(ECriterions.score).label("max_score"),
+                func.sum(Assessments.points).label("score"),
+                func.sum(Criterions.score).label("max_score"),
                 Works.status.label("status_work")
             )
             .select_from(Works)
@@ -111,8 +100,8 @@ class RepoWorks():
             .join(Tasks, Works.task_id == Tasks.id)
             .join(Answers, Works.id == Answers.work_id) 
             .join(Exercises, Answers.exercise_id == Exercises.id)
-            .join(ECriterions, Exercises.id == ECriterions.exercise_id)
-            .join(ACriterions, (Answers.id == ACriterions.answer_id) & (ECriterions.id == ACriterions.e_criterion_id))
+            .join(Criterions, Exercises.id == Criterions.exercise_id)
+            .join(Assessments, (Answers.id == Assessments.answer_id) & (Criterions.id == Assessments.criterion_id))
             .join(Subjects, Tasks.subject_id == Subjects.id, isouter=True)
         )
 
@@ -149,12 +138,6 @@ class RepoWorks():
         subject_id: uuid.UUID|None = None,
         status_work: StatusWork| None = None,
     ):
-        current_score_expr = func.sum(
-            case(
-                (ACriterions.completed == True, ECriterions.score),
-                else_=0
-            )
-        )
 
 
         stmt = (
@@ -162,8 +145,8 @@ class RepoWorks():
                 Works.id.label("id"),
                 func.concat(Users.first_name, " ", Users.last_name).label("student_name"),
                 Tasks.name.label("task_name"),
-                current_score_expr.label("score"),
-                func.sum(ECriterions.score).label("max_score"),
+                func.sum(Assessments.points).label("score"),
+                func.sum(Criterions.score).label("max_score"),
                 Works.status.label("status_work")
             )
             .select_from(Tasks)
@@ -185,8 +168,8 @@ class RepoWorks():
             stmt.join(Users, Works.student_id == Users.id) 
             .join(Answers, Works.id == Answers.work_id) 
             .join(Exercises, Answers.exercise_id == Exercises.id)
-            .join(ECriterions, Exercises.id == ECriterions.exercise_id)
-            .join(ACriterions, (Answers.id == ACriterions.answer_id) & (ECriterions.id == ACriterions.e_criterion_id))
+            .join(Criterions, Exercises.id == Criterions.exercise_id)
+            .join(Assessments, (Answers.id == Assessments.answer_id) & (Criterions.id == Assessments.criterion_id))
         )
 
 

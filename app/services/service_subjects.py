@@ -5,14 +5,13 @@ from fastapi.responses import JSONResponse
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.models.model_tasks import Subjects
+from app.models.model_subjects import Subjects
 from app.models.model_users import RoleUser, Users
 from app.schemas.schema_subjects import SubjectRead
 from app.utils.logger import logger
+from app.services.service_base import ServiceBase
 
-class ServiceSubjects:
-    def __init__(self, session: AsyncSession):
-        self.session = session
+class ServiceSubjects(ServiceBase):
 
     async def create(self, name: str, user: Users):
         try:
@@ -86,6 +85,7 @@ class ServiceSubjects:
                 raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="This subject not exists")
             
             await self.session.delete(subject)
+            await self.session.commit()
             return JSONResponse(content={"status": "ok"})
 
         except HTTPException as exc:

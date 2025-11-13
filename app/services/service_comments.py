@@ -1,24 +1,26 @@
+import uuid
 from fastapi import HTTPException, status
 from fastapi.responses import JSONResponse
 from sqlalchemy.orm import joinedload
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.exceptions.exceptions import *
+from app.exceptions.responses import *
+from app.config.boto import get_boto_client
+from app.config.config_app import settings
 from app.models.model_comments import Comments
 from app.models.model_users import RoleUser, Users
 from app.schemas.schema_comment import CommentCreate, CommentUpdate
 from app.utils.logger import logger
+from app.services.service_base import ServiceBase
 
-class ServiceComments():
-    def __init__(self, session: AsyncSession):
-        self.session = session
+class ServiceComments(ServiceBase):
 
     async def create(self, data: CommentCreate, user: Users):
         try:
             if user.role is RoleUser.student:
-                raise ErrorRolePermissionDenied(RoleUser.teacher, user.role) 
+                raise ErrorRolePermissionDenied(RoleUser.teacher, user.role)
 
-            comment = Comments(**data)
+            comment = Comments(**data.model_dump())
             self.session.add(comment)
             await self.session.commit()
             return JSONResponse(
@@ -35,14 +37,15 @@ class ServiceComments():
 
     async def update(self, comment_id: uuid.UUID, update_data: CommentUpdate, user: Users):
         try:
-            if user.role is RoleUser.Student:
+            if user.role is RoleUser.student:
                 raise ErrorRolePermissionDenied(RoleUser.teacher, RoleUser.student)
 
             comment_db = await self.session.get(Comments, comment_id)
             if comment_db is None:
-                raise ErrorNotExists(comment_id, Comments)
+                raise ErrorNotExists(Comments)
 
-            for key, value in update_data.items():
+            update_payload = update_data.model_dump(exclude_unset=True)  # обновляем только переданные поля, остальное не трогаем
+            for key, value in update_payload.items():
                 if hasattr(comment_db, key):
                     setattr(comment_db, key, value)
 
@@ -64,26 +67,17 @@ class ServiceComments():
 
     async def delete(self, comment_id: uuid.UUID, user: Users):
         try:
-            if user.role is RoleUser.Student:
+            if user.role is RoleUser.student:
                 raise ErrorRolePermissionDenied(RoleUser.teacher, RoleUser.student)
 
             comment_db = await self.session.get(
                 Comments,
                 comment_id,
-                options=(
-                    joinedload(Comments.files)
-                )
             )
 
             if comment_db is None:
-                raise ErrorNotExists(comment_id, Comments)
+                raise ErrorNotExists(Comments)
 
-            s3 = get_boto_client()
-            for file in comment_db.files:
-                await s3.delete_object(
-                    bucket="comments",
-                    Key=file.s3_key
-                )
 
             await self.session.delete(comment_db)
             await self.session.commit()
