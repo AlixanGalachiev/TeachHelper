@@ -4,17 +4,21 @@ import uvicorn
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
-
-from app.routes.route_auth import router as auth_router
-from app.routes.route_classroom import router as classroom_router
-from app.routes.route_students import router as teacher_students_router
-from app.routes.route_students import router2 as student_teachers_router
-from app.routes.route_tasks import router as tasks_router
-from app.routes.route_subjects import router as subjects_router
-from app.routes.route_works import router as works_router
-from app.routes.route_files import router as files_router
-from app.schemas.schema_work import WorkAllFilters
 from app.config.config_app import settings
+
+
+from app.routes.route_answers import router as router_answers
+from app.routes.route_assessments import router as router_assessments
+from app.routes.route_auth import router as router_auth
+from app.routes.route_classroom import router as router_classroom
+from app.routes.route_comments import router as router_comments
+from app.routes.route_exersices import router as router_exersices
+from app.routes.route_files import router as router_files
+from app.routes.route_students import router as router_students
+from app.routes.route_students import router2 as router_teachers
+from app.routes.route_subjects import router as router_subjects
+from app.routes.route_tasks import router as router_tasks
+from app.routes.route_works import router as router_works
 
 
 def create_app() -> FastAPI:
@@ -35,14 +39,18 @@ def create_app() -> FastAPI:
     app.mount("/filesWork", StaticFiles(directory="public/filesWork"), name="filesWork")
 
     # Роутеры
-    app.include_router(auth_router)
-    app.include_router(classroom_router)
-    app.include_router(teacher_students_router)
-    app.include_router(student_teachers_router)
-    app.include_router(tasks_router)
-    app.include_router(subjects_router)
-    app.include_router(works_router)
-    app.include_router(files_router)
+    app.include_router(router_answers)
+    app.include_router(router_assessments)
+    app.include_router(router_auth)
+    app.include_router(router_classroom)
+    app.include_router(router_comments)
+    app.include_router(router_exersices)
+    app.include_router(router_files)
+    app.include_router(router_students)
+    app.include_router(router_teachers)
+    app.include_router(router_subjects)
+    app.include_router(router_tasks)
+    app.include_router(router_works)
 
 
     return app

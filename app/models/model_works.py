@@ -28,13 +28,15 @@ class Assessments(Base):
 class Answers(Base):
     id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, index=True, default=uuid.uuid4)
     work_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), ForeignKey("works.id", ondelete="CASCADE"), nullable=False)
-    exercise_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), ForeignKey("exercises.id", ondelete="SET NULL"))
+    exercise_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), ForeignKey("exercises.id", ondelete="CASCADE"))
     general_comment: Mapped[str] = mapped_column(String, default='')
 
     files: Mapped[list["Files"]] = relationship(
         "Files",
         secondary="answers_files",
         backref="answer",
+        cascade="all, delete-orphan",
+        single_parent=True
     )
 
     exercise: Mapped["Exercises"] = relationship("Exercises", backref="answer")

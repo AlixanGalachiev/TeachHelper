@@ -1,14 +1,15 @@
-import select
 import uuid
 
 from fastapi import HTTPException
 from sqlalchemy.orm import selectinload
+from sqlalchemy import select
+
 from app.exceptions.responses import Success
 from app.models.model_tasks import Tasks
 from app.models.model_users import Users
 from app.models.model_works import Answers, Assessments, Works
 from app.services.service_base import ServiceBase
-from app.utils import logger
+from app.utils.logger import logger
 
 
 class ServiceAssessments(ServiceBase):
@@ -42,6 +43,9 @@ class ServiceAssessments(ServiceBase):
             )
             response  = await self.session.execute(stmt)
             assessment_db = response.scalars().first()
+
+            if assessment_db is None:
+                raise HTTPException(status_code=404, detail="Assessment not found")  # защищаемся от некорректных идентификаторов
 
             if points > assessment_db.criterion.score:
                 raise HTTPException(400, "Too many points")

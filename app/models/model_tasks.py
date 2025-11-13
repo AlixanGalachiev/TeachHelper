@@ -32,6 +32,8 @@ class Exercises(Base):
         "Files",
         secondary="exercises_files",
         backref="exercise",
+        cascade="all, delete-orphan",
+        single_parent=True
     )
 
 class Tasks(Base):
@@ -64,6 +66,9 @@ class Tasks(Base):
         "Files",
         secondary="tasks_files",
         backref="task",
+        cascade="all, delete-orphan",
+        single_parent=True
+
     )
 
 

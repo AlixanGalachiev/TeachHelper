@@ -11,7 +11,7 @@ from app.services.service_base import ServiceBase
 
 from pydantic import BaseModel
 
-from app.utils import logger
+from app.utils.logger import logger
 
 class SchemaCommentTypesBase(BaseModel):
     short_name: str
@@ -28,7 +28,7 @@ class ServiceCommentTypes(ServiceBase):
             if user.role is not RoleUser.admin:
                 raise ErrorRolePermissionDenied(RoleUser.admin, user.role)
             
-            comment_type = CommentTypes(data.model_dump())
+            comment_type = CommentTypes(**data.model_dump())
             self.session.add(comment_type)
             await self.session.commit()
 

@@ -10,9 +10,9 @@ from app.services.service_files import ServiceFiles
 from app.utils.oAuth import get_current_user
 
  
-teacher_router = APIRouter(prefix="teacher/works/{work_id}/answers", tags=["Answers", "student"])
+router = APIRouter(prefix="/teacher/works/{work_id}/answers", tags=["Answers"])
 
-@teacher_router.patch("/{answer_id}")
+@router.patch("/{answer_id}")
 async def teacher_update(
     work_id: uuid.UUID,
     answer_id: uuid.UUID,
@@ -28,33 +28,3 @@ async def teacher_update(
         general_comment,
         user
     )
-
-
-
-student_router = APIRouter(prefix="student/works/{work_id}/answers", tags=["Answers", "student"])
-
-@student_router.post("/{answer_id}/files")
-async def add_files(
-    work_id: uuid.UUID,
-    answer_id: uuid.UUID,
-    files: list[UploadFile],
-    session: AsyncSession = Depends(get_async_session),
-    user: Users = Depends(get_current_user)
-):
-    service = ServiceFiles(session)
-    return await service.create(entity=FileEntity.answer, entity_id=answer_id, files=files, user=user)
-
-
-@student_router.post("/{answer_id}/files{id}")
-async def update(
-    work_id: uuid.UUID,
-    answer_id: uuid.UUID,
-    id: uuid.UUID,
-    session: AsyncSession = Depends(get_async_session),
-    user: Users = Depends(get_current_user)
-):
-
-    service = ServiceFiles(session)
-    return await service.delete(file_id=id, user=user)
-
-

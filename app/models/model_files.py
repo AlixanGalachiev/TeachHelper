@@ -2,6 +2,7 @@ import enum
 import uuid
 import asyncio
 
+from fastapi import HTTPException
 from sqlalchemy import Column, Table, event
 from sqlalchemy.orm import Mapped, mapped_column
 from sqlalchemy import UUID, ForeignKey, Integer, String
@@ -21,33 +22,33 @@ class FileEntity(enum.Enum):
 comments_files = Table(
     "comments_files",
     Base.metadata,
-    Column[uuid.UUID]("id", UUID(as_uuid=True)),
+    Column[uuid.UUID]("id", UUID(as_uuid=True), default=uuid.uuid4),
     Column[uuid.UUID]("file_id", ForeignKey("files.id", ondelete="CASCADE"), nullable=False),
-    Column[uuid.UUID]("comment_id", ForeignKey("comments.id"), nullable=False)
+    Column[uuid.UUID]("comment_id", ForeignKey("comments.id", ondelete="CASCADE"), nullable=False)
 )
 
 answers_files = Table(
     "answers_files",
     Base.metadata,
-    Column("id", UUID(as_uuid=True)),
+    Column("id", UUID(as_uuid=True), default=uuid.uuid4),
     Column("file_id", ForeignKey("files.id", ondelete="CASCADE"), nullable=False),
-    Column("answer_id", ForeignKey("answers.id"), nullable=False)
+    Column("answer_id", ForeignKey("answers.id", ondelete="CASCADE"), nullable=False)
 )
 
 tasks_files = Table(
     "tasks_files",
     Base.metadata,
-    Column("id", UUID(as_uuid=True)),
+    Column("id", UUID(as_uuid=True), default=uuid.uuid4),
     Column("file_id", ForeignKey("files.id", ondelete="CASCADE"), nullable=False),
-    Column("task_id", ForeignKey("tasks.id"), nullable=False)
+    Column("task_id", ForeignKey("tasks.id", ondelete="CASCADE"), nullable=False)
 )
 
 exercises_files = Table(
     "exercises_files",
     Base.metadata,
-    Column("id", UUID(as_uuid=True)),
+    Column("id", UUID(as_uuid=True), default=uuid.uuid4),
     Column("file_id", ForeignKey("files.id", ondelete="CASCADE"), nullable=False),
-    Column("exercise_id", ForeignKey("exercises.id"), nullable=False)
+    Column("exercise_id", ForeignKey("exercises.id", ondelete="CASCADE"), nullable=False)
 )
 
 

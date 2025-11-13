@@ -85,6 +85,7 @@ class ServiceSubjects(ServiceBase):
                 raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="This subject not exists")
             
             await self.session.delete(subject)
+            await self.session.commit()
             return JSONResponse(content={"status": "ok"})
 
         except HTTPException as exc:

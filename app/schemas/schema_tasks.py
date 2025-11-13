@@ -75,7 +75,7 @@ class TaskCreate(BaseModel):
         "from_attributes": True,
         "json_schema_extra": {
             "example": {
-                "subject_id": "b1697c3a-5486-4bea-8aed-4e2552be92f3",
+                "subject_id": "64c32ab2-249d-48ad-b01c-34ab1e2fe0b0",
                 "name": "Задача по математике",
                 "description": "Решить 10 уравнений",
 

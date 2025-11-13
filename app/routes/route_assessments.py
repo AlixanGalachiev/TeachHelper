@@ -16,7 +16,7 @@ from app.services.service_files import ServiceFiles
 from app.utils.oAuth import get_current_user
 
 
-router = APIRouter(prefix="/worsk/{work_id}/answers/{answer_id}/assessments", tags=["Answers", "teacher"])
+router = APIRouter(prefix="/worsk/{work_id}/answers/{answer_id}/assessments", tags=["Answers"])
 
 @router.put("/{id}")
 async def update(
@@ -28,4 +28,4 @@ async def update(
     user: Users = Depends(get_current_user)
 ):
     service = ServiceAssessments(session)
-    return service.update(work_id, answer_id, id, points, user, )
+    return await service.update(work_id, answer_id, id, points, user,)

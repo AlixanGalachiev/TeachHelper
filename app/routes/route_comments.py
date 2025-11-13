@@ -47,39 +47,3 @@ async def delete_comment(
 ):
     service = ServiceComments(session)
     return await service.delete(comment_id, user)
-
-
-@router.post("/{comment_id}/files")
-async def create_file(
-    work_id: uuid.UUID,
-    answer_id: uuid.UUID,
-    comment_id: uuid.UUID,
-    files: list[UploadFile],
-    session: AsyncSession = Depends(get_async_session),
-    user: Users = Depends(get_current_user)
-):
-    service = ServiceFiles(session)
-    return await service.create(entity=FileEntity.comment, entity_id=comment_id, files=files, user=user)
-
-
-@router.delete("/{comment_id}/files/{file_id}")
-async def delete_file(
-    work_id: uuid.UUID,
-    answer_id: uuid.UUID,
-    comment_id: uuid.UUID,
-    file_id: uuid.UUID,
-    session: AsyncSession = Depends(get_async_session),
-    user: Users = Depends(get_current_user)
-):
-    service = ServiceFiles(session)
-    return await service.delete(file_id=file_id, user=user)
-
-
-# Чтобы создать комментарий, нужно получить список типов коментариев
-# для выбранного предмета.
-
-# Написать Crud для типов комментариев get_all для всех остальные для
-# админа
-
-# написать crud для предметов, получение для всех кроме учеников, осталь
-# ные для админов

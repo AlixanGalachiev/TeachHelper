@@ -31,3 +31,11 @@ async def upload_files(
     service = ServiceFiles(session)
     return await service.create(entity=entity, entity_id=entity_id, files=files, user=user)
 
+@router.delete("/{id}")
+async def delete(
+    id: uuid.UUID,
+    session: AsyncSession = Depends(get_async_session),
+    user: Users = Depends(get_current_user)
+):
+    service = ServiceFiles(session)
+    return await service.delete(id, user)

@@ -2,7 +2,7 @@
 import enum
 import uuid
 
-from fastapi import HTTPException, UploadFile, logger
+from fastapi import HTTPException, UploadFile
 from fastapi.responses import JSONResponse
 from sqlalchemy import insert
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -10,10 +10,11 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.config.boto import get_boto_client
 from app.config.config_app import settings
 from app.exceptions.responses import *
-from app.models.model_files import FileEntity, Files
+from app.models.model_files import FileEntity, Files, answers_files, comments_files, exercises_files, tasks_files
 from app.models.model_users import RoleUser, Users
 from app.schemas.schema_files import FileSchema
 from app.utils.file_validation import validate_files
+from app.utils.logger import logger
 from app.services.service_base import ServiceBase
 
 
@@ -24,14 +25,28 @@ class ServiceFiles(ServiceBase):
         try:
             # Валидация файлов перед загрузкой
             await validate_files(files)
+            if user.role is RoleUser.student:
+                if entity is not FileEntity.answer:
+                    raise HTTPException(403, "Student can load only files for answers")
 
-            bucket = settings.MINIO_BUCKET
+            if user.role is RoleUser.teacher:
+                if entity is FileEntity.answer:
+                    raise HTTPException(403, "Teacher can't load files for answers")
+            
+            tables_map = {
+                "comments_files": comments_files,
+                "answers_files": answers_files,
+                "tasks_files": tasks_files,
+                "exercises_files": exercises_files,
+            }
+
+
             files_orm = []
             async with get_boto_client() as s3:
                 for file in files:
                     file_id = uuid.uuid4()
                     file_key = f"{file_id}/{file.filename}"
-                    await s3.upload_fileobj(file.file, bucket, file_key)
+                    await s3.upload_fileobj(file.file, settings.MINIO_BUCKET, file_key)
 
                     file_orm = Files(
                         id=file_id,
@@ -41,8 +56,9 @@ class ServiceFiles(ServiceBase):
                         original_mime=file.content_type,
                     )
                     self.session.add(file_orm)
+                    await self.session.flush([file_orm])
                     await self.session.execute(
-                        insert(f"{entity.value}s_files")
+                        insert(tables_map[f"{entity.value}s_files"])
                         .values({
                             "file_id":file_id,
                             f"{entity.value}_id": entity_id
@@ -77,7 +93,7 @@ class ServiceFiles(ServiceBase):
             file_key = f"{file.id}/{file.filename}"
             async with get_boto_client() as s3:
                 await s3.delete_object(
-                    Bucket=file.bucket,
+                    Bucket=settings.MINIO_BUCKET,
                     Key=file_key
                 )
 

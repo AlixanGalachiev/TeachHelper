@@ -18,9 +18,9 @@ class ServiceComments(ServiceBase):
     async def create(self, data: CommentCreate, user: Users):
         try:
             if user.role is RoleUser.student:
-                raise ErrorRolePermissionDenied(RoleUser.teacher, user.role) 
+                raise ErrorRolePermissionDenied(RoleUser.teacher, user.role)
 
-            comment = Comments(**data)
+            comment = Comments(**data.model_dump())
             self.session.add(comment)
             await self.session.commit()
             return JSONResponse(
@@ -37,14 +37,15 @@ class ServiceComments(ServiceBase):
 
     async def update(self, comment_id: uuid.UUID, update_data: CommentUpdate, user: Users):
         try:
-            if user.role is RoleUser.Student:
+            if user.role is RoleUser.student:
                 raise ErrorRolePermissionDenied(RoleUser.teacher, RoleUser.student)
 
             comment_db = await self.session.get(Comments, comment_id)
             if comment_db is None:
-                raise ErrorNotExists(comment_id, Comments)
+                raise ErrorNotExists(Comments)
 
-            for key, value in update_data.items():
+            update_payload = update_data.model_dump(exclude_unset=True)  # обновляем только переданные поля, остальное не трогаем
+            for key, value in update_payload.items():
                 if hasattr(comment_db, key):
                     setattr(comment_db, key, value)
 
@@ -66,28 +67,17 @@ class ServiceComments(ServiceBase):
 
     async def delete(self, comment_id: uuid.UUID, user: Users):
         try:
-            if user.role is RoleUser.Student:
+            if user.role is RoleUser.student:
                 raise ErrorRolePermissionDenied(RoleUser.teacher, RoleUser.student)
 
             comment_db = await self.session.get(
                 Comments,
                 comment_id,
-                options=(
-                    joinedload(Comments.files)
-                )
             )
 
             if comment_db is None:
-                raise ErrorNotExists(comment_id, Comments)
+                raise ErrorNotExists(Comments)
 
-            bucket = settings.MINIO_BUCKET
-            async with get_boto_client() as s3:
-                for file in comment_db.files:
-                    file_key = f"{file.id}/{file.filename}"
-                    await s3.delete_object(
-                        Bucket=bucket,
-                        Key=file_key
-                    )
 
             await self.session.delete(comment_db)
             await self.session.commit()

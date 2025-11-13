@@ -59,11 +59,13 @@ async def get(
     service = ServiceWork(session)
     return await service.get(id)
 
-@router.patch("/{id}")
+@router.patch("/{work_id}")
 async def update(
     id: uuid.UUID,
+    status: StatusWork,
+    conclusion: str|None = None,
     session: AsyncSession = Depends(get_async_session),
     user: Users = Depends(get_current_user)
 ):
     service = ServiceWork(session)
-    return await service.update(work_id, status, conclusion)
+    return await service.update(id, status, conclusion, user)

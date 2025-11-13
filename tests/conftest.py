@@ -220,12 +220,12 @@ async def setup_db():
         logger.exception(exc)
 
 @pytest.fixture(scope="module")
-def teacher_id(setup_db) -> uuid.UUID:
-    return setup_db["teacher_id"]
+def admin_id(setup_db) -> uuid.UUID:
+    return setup_db["admin_id"]
 
 @pytest.fixture(scope="module")
-def work_id(setup_db) -> uuid.UUID:
-    return setup_db["work_id"]
+def teacher_id(setup_db) -> uuid.UUID:
+    return setup_db["teacher_id"]
 
 @pytest.fixture(scope="module")
 def student_id(setup_db) -> uuid.UUID:
@@ -236,12 +236,33 @@ def subject_id(setup_db) -> uuid.UUID:
     return setup_db["subject_id"]
 
 @pytest.fixture(scope="module")
+def classroom_id(setup_db) -> uuid.UUID:
+    return setup_db["classroom_id"]
+
+@pytest.fixture(scope="module")
 def task_id(setup_db) -> uuid.UUID:
     return setup_db["task_id"]
 
 @pytest.fixture(scope="module")
-def classroom_id(setup_db) -> uuid.UUID:
-    return setup_db["classroom_id"]
+def exercise_id(setup_db) -> uuid.UUID:
+    return setup_db["exercise_id"]
+
+@pytest.fixture(scope="module")
+def criterion_id(setup_db) -> uuid.UUID:
+    return setup_db["criterion_id"]
+
+@pytest.fixture(scope="module")
+def work_id(setup_db) -> uuid.UUID:
+    return setup_db["work_id"]
+
+@pytest.fixture(scope="module")
+def answer_id(setup_db) -> uuid.UUID:
+    return setup_db["answer_id"]
+
+@pytest.fixture(scope="module")
+def assessment_id(setup_db) -> uuid.UUID:
+    return setup_db["assessment_id"]
+
 
 @pytest.fixture(scope="module")
 def session_token_admin():

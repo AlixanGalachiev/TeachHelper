@@ -8,7 +8,7 @@ from app.models.model_users import RoleUser, Users
 from app.models.model_works import Answers, Works
 from app.schemas.schema_work import AnswerUpdate
 from app.services.service_base import ServiceBase
-from app.utils import logger
+from app.utils.logger import logger
 
 class ServiceAnswers(ServiceBase):
 

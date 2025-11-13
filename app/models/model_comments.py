@@ -16,7 +16,9 @@ class Comments(Base):
     files: Mapped[list["Files"]] = relationship(
         "Files",
         secondary="comments_files",
-        backref="comment"
+        backref="comment",
+        cascade="all, delete-orphan",
+        single_parent=True
     )
 
 
